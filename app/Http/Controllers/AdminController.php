@@ -449,11 +449,7 @@ class AdminController extends Controller
                                     $data[] = array_merge($pi->toArray(), $item->toArray());
                                 }
                                 // Accounts and transactions calculations starting
-                                $transaction = UserTransaction::where('tnx_user_id', '=', $isPartyUpdated->p_id)
-                                    ->where('tnx_user_type', '=', 2)
-                                    ->where('tnx_type', '=', 2)
-                                    ->where('tnx_invoice', '=', $history->p_h_id)
-                                    ->first();
+                                $transaction = UserTransaction::Find(Session::get('tnx_id'));
                                 $account = Account::find($request->tnx_account);
                                 if ($request->p_h_desc == '') {
                                     $description = 'No description';
@@ -484,8 +480,9 @@ class AdminController extends Controller
                                             'tnx_user_id' => $isPartyUpdated->p_id,
                                             'tnx_user_type' => 2,
                                             'tnx_date' => $request->p_h_bill_date,
-                                            'tnx_amount' => -1 * $amt,
-                                            'tnx_type' => 1,
+                                            'tnx_p_amount' => -1 * $amt,
+                                            'tnx_amount' => $request->p_h_paid,
+                                            'tnx_type' => 3,
                                             'tnx_final_dues' => $isPartyUpdated->p_dues,
                                             'tnx_account' => $account->ac_id,
                                             'tnx_remark' => $request->p_h_bill_no . ', ' . $description,
@@ -517,8 +514,9 @@ class AdminController extends Controller
                                             'tnx_user_id' => $isPartyUpdated->p_id,
                                             'tnx_user_type' => 2,
                                             'tnx_date' => $request->p_h_bill_date,
-                                            'tnx_amount' => -1 * $amt,
-                                            'tnx_type' => 1,
+                                            'tnx_p_amount' => -1 * $amt,
+                                            'tnx_amount' => $request->p_h_paid,
+                                            'tnx_type' => 3,
                                             'tnx_final_dues' => $isPartyUpdated->p_dues,
                                             'tnx_account' => $account->ac_id,
                                             'tnx_remark' => $request->p_h_bill_no . ', ' . $description,
@@ -558,11 +556,7 @@ class AdminController extends Controller
                                 $data[] = array_merge($pi->toArray(), $item->toArray());
                             }
                             // Accounts and transactions calculations starting
-                            $transaction = UserTransaction::where('tnx_user_id', '=', $isPartyUpdated->p_id)
-                                ->where('tnx_user_type', '=', 2)
-                                ->where('tnx_type', '=', 2)
-                                ->where('tnx_invoice', '=', $history->p_h_id)
-                                ->first();
+                            $transaction = UserTransaction::Find(Session::get('tnx_id'));
                             $account = Account::find($request->account);
                             if ($request->p_h_desc == '') {
                                 $description = 'No description';
@@ -593,8 +587,9 @@ class AdminController extends Controller
                                         'tnx_user_id' => $isPartyUpdated->p_id,
                                         'tnx_user_type' => 2,
                                         'tnx_date' => $request->p_h_bill_date,
-                                        'tnx_amount' => -1 * $amt,
-                                        'tnx_type' => 1,
+                                        'tnx_p_amount' => -1 * $amt,
+                                        'tnx_amount' => $request->p_h_paid,
+                                        'tnx_type' => 3,
                                         'tnx_final_dues' => $isPartyUpdated->p_dues,
                                         'tnx_account' => $account->ac_id,
                                         'tnx_remark' => $request->p_h_bill_no . ', ' . $description,
@@ -626,8 +621,9 @@ class AdminController extends Controller
                                         'tnx_user_id' => $isPartyUpdated->p_id,
                                         'tnx_user_type' => 2,
                                         'tnx_date' => $request->p_h_bill_date,
-                                        'tnx_amount' => -1 * $amt,
-                                        'tnx_type' => 1,
+                                        'tnx_p_amount' => -1 * $amt,
+                                        'tnx_amount' => $request->p_h_paid,
+                                        'tnx_type' => 3,
                                         'tnx_final_dues' => $isPartyUpdated->p_dues,
                                         'tnx_account' => $account->ac_id,
                                         'tnx_remark' => $request->p_h_bill_no . ', ' . $description,
@@ -687,11 +683,7 @@ class AdminController extends Controller
                             $data[] = array_merge($pi->toArray(), $item->toArray());
                         }
                         // Accounts and transactions calculations starting
-                        $transaction = UserTransaction::where('tnx_user_id', '=', $isPartyUpdated->p_id)
-                            ->where('tnx_user_type', '=', 2)
-                            ->where('tnx_type', '=', 2)
-                            ->where('tnx_invoice', '=', $oldHistory->p_h_id)
-                            ->first();
+                        $transaction = UserTransaction::Find(Session::get('tnx_id'));
                         $account = Account::find($transaction->tnx_account);
                         $fianlAcBal = ((int)$account->ac_balance + (int)$transaction->tnx_amount) - (int)$request->p_h_paid;
                         $account->ac_balance = $fianlAcBal;
@@ -716,13 +708,14 @@ class AdminController extends Controller
                                 'tnx_closing_ac_bal' => $fianlAcBal,
                                 'tnx_invoice' => $oldHistory->p_h_id
                             ]);
-                        } else {
+                        } elseif ($amt < 0) {
                             $transaction->update([
                                 'tnx_user_id' => $isPartyUpdated->p_id,
                                 'tnx_user_type' => 2,
                                 'tnx_date' => $request->p_h_bill_date,
-                                'tnx_amount' => -1 * $amt,
-                                'tnx_type' => 1,
+                                'tnx_p_amount' => -1 * $amt,
+                                'tnx_amount' => $request->p_h_paid,
+                                'tnx_type' => 3,
                                 'tnx_final_dues' => $isPartyUpdated->p_dues,
                                 'tnx_account' => $account->ac_id,
                                 'tnx_remark' => $request->p_h_bill_no . ', ' . $description,
@@ -837,8 +830,9 @@ class AdminController extends Controller
                             'tnx_user_name' => $partyID->p_name,
                             'tnx_user_type' => 2,
                             'tnx_date' => $history->p_h_bill_date,
-                            'tnx_amount' => -1 * $amt,
-                            'tnx_type' => 1,
+                            'tnx_p_amount' => -1 * $amt,
+                            'tnx_amount' => $request->p_h_paid,
+                            'tnx_type' => 3,
                             'tnx_final_dues' => $partyID->p_dues,
                             'tnx_account' => $account->ac_id,
                             'tnx_remark' => $history->p_h_bill_no . ', ' . $description,
@@ -846,6 +840,7 @@ class AdminController extends Controller
                             'tnx_invoice' => $history->p_h_id
                         ]);
                     }
+                    Session::put('tnx_id', $transaction->tnx_id);
                     // Accounts and transactions calculations ending
                     return response()->json([
                         'role' => $request->button_role,

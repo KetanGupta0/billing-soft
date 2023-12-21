@@ -78,7 +78,7 @@
                                             @if ($transaction->t_type == 1)
                                             <td><div class="text-success">{{ $transaction['t_amount'] }}</div></td>
                                             <td></td>
-                                            @elseif ($transaction->t_type == 2)
+                                            @elseif ($transaction->t_type == 2 || $transaction->t_type == 3)
                                             <td></td>
                                             <td><div class="text-danger">{{ $transaction['t_amount'] }}</div></td>
                                             @endif
@@ -222,7 +222,7 @@
                 }
                 if(value.t_type == 1){
                     paid = value.t_amount;
-                }else if(value.t_type == 2){
+                }else if(value.t_type == 2 || value.t_type == 3){
                     dues = value.t_amount;
                 }
                 $('#account-list').append(`

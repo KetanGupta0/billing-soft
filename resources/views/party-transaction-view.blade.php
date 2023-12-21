@@ -80,6 +80,8 @@
                                         <td>
                                             @if ($transaction->tnx_type == 1)
                                             <div class="text-success">{{$transaction->tnx_amount}}</div>
+                                            @elseif($transaction->tnx_type == 3)
+                                            <div class="text-success">{{$transaction->tnx_p_amount}}</div>
                                             @endif
                                         </td>
                                         <td>
@@ -178,6 +180,8 @@
                 let amt = value.tnx_amount;
                 if (value.tnx_type == 1) {
                     paid = `<div class="text-success">${value.tnx_amount}</div>`;
+                }else if (value.tnx_type == 3) {
+                    paid = `<div class="text-success">${value.tnx_p_amount}</div>`;
                 } else if (value.tnx_type == 2) {
                     dues = value.tnx_p_amount != null ? `<div class="text-danger">${value.tnx_p_amount}</div>` : `<div class="text-danger">${value.tnx_amount}</div>`;
                 }
