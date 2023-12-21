@@ -556,7 +556,7 @@
                         // var id = value.p_id * 456 * 789;
                         var id = value.p_id;
                         html +=
-                            `<tr class="p_detail" data='${value.p_id}' id="${id}"><td>${value.p_name}</td><td>${value.p_add}</td><td>${value.p_fmob}</td><td>${value.p_dues}</td></tr>`;
+                            `<tr class="p_detail pdi${value.p_id}" data='${value.p_id}' id="${id}"><td>${value.p_name}</td><td>${value.p_add}</td><td>${value.p_fmob}</td><td>${value.p_dues}</td></tr>`;
                     })
                     $('#partiesdata').html(html);
                 }
@@ -573,7 +573,7 @@
                         // var id = value.item_id * 456 * 789;
                         var id = value.item_id;
                         html +=
-                            `<tr id="${id}"><td>${value.item_name}</td><td>${value.item_name_local}</td><td>${value.item_stock_whole} ${value.item_base_unit} , ${value.item_stock_retail} ${value.item_sub_unit} </td><td>${value.item_location}</td></tr>`;
+                            `<tr id="${id}" class="pii${id}"><td>${value.item_name}</td><td>${value.item_name_local}</td><td>${value.item_stock_whole} ${value.item_base_unit} , ${value.item_stock_retail} ${value.item_sub_unit} </td><td>${value.item_location}</td></tr>`;
                     })
                     $('#itemsdata').html(html);
                 }
@@ -632,8 +632,8 @@
                 $('#partiesdata tr').each(function(index) {
                     if ($(this).hasClass("highlight_row")) {
                         var id = $(this).attr('id');
-                        var xyz = parseFloat(id);
-                        $('#partiesdata tr:nth-child(' + xyz + ')').trigger('click');
+                        $('.pdi'+id).click();
+                        console.log($('.pdi'+id));
                         return false;
                     }
                 });
@@ -800,7 +800,7 @@
                     if ($(this).hasClass("highlight_row")) {
                         var id = $(this).attr('id');
                         var xyz = parseFloat(id);
-                        $('#itemsdata tr:nth-child(' + xyz + ')').trigger('click');
+                        $('.pii'+id).click();
                         return false;
                     }
                 });
@@ -1162,7 +1162,7 @@
                 item_mrp: item_mrp,
                 item_disc_whole: item_disc_whole,
                 item_disc_retail: item_disc_retail,
-                account:account
+                account: account
             }, function(res) {
                 console.log(res);
                 // return;

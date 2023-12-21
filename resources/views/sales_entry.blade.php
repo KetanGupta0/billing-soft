@@ -322,7 +322,7 @@
                             // var id = value.item_id * 456 * 789;
                             var id = value.item_id;
                             html +=
-                                `<tr id="${id}">
+                                `<tr id="${id}" class="pii${id}">
                                     <td>${value.item_name}</td>
                                     <td>${value.item_name_local}</td>
                                     <td>${value.item_stock_whole} ${value.item_base_unit} , ${value.item_stock_retail} ${value.item_sub_unit} </td>
@@ -383,8 +383,7 @@
                     $('#itemsdata tr').each(function(index) {
                         if ($(this).hasClass("highlight_row")) {
                             var id = $(this).attr('id');
-                            var xyz = parseFloat(id);
-                            $('#itemsdata tr:nth-child(' + xyz + ')').trigger('click');
+                            $('.pii'+id).click();
                             return false;
                         }
                     });
@@ -425,7 +424,7 @@
                     } else {
                         $(this).hide();
                         $(this).removeClass("highlight_row");
-                        $('#itemtable').hide();
+                        // $('#itemtable').hide();
                     }
                 });
             }
