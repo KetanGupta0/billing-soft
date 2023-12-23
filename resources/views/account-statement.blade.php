@@ -56,7 +56,7 @@
     </style>
 </head>
 
-<body>
+<body onload="window.print()">
     <div class="border border-bottom-0">
         <div class="row">
             <div class="col-12 pt-1">
@@ -95,9 +95,9 @@
                                     <td>@if($tnx->tnx_user_name) {{$tnx->tnx_user_name}}, @endif {{$tnx->t_remarks}}</td>
                                     @if($tnx->t_type == 1 || $tnx->t_type == 3)
                                     <td>{{$tnx->t_amount}}</td>
-                                    <td>0</td>
+                                    <td></td>
                                     @elseif($tnx->t_type == 2)
-                                    <td>0</td>
+                                    <td></td>
                                     <td>{{$tnx->t_amount}}</td>
                                     @endif
                                     <td>{{$tnx->t_final_amount}}</td>

@@ -1135,7 +1135,7 @@
                 $("#item_stock_whole").attr('style', 'border: 1px solid red !important');
                 return;
             }
-            // return;
+            let stateData = 0;
             $.post("{{url('save-purchase-entry')}}", {
                 p_id: p_id,
                 p_e_b_otp: p_e_b_otp,
@@ -1236,6 +1236,7 @@
                     $('#p_add').val(res.partyData.p_add);
                     $('#p_desc').val(res.partyData.p_desc);
 
+                    stateData = res.partyData.p_state;
 
                     // Billing Details
                     // console.log('InvTotal -> '+invTotals);
@@ -1276,7 +1277,10 @@
             });
 
             setTimeout(() => {
-                $('#tnx_account').val(parseInt("{{Session::get('tnx_id')}}"));
+                $('#p_state').val(stateData);
+                $('#p_h_total').val(parseFloat(invTotals)+parseFloat($('#p_h_other').val()));
+                $('#tnx_account').val(parseInt(account));
+                $('#tnx_account').attr('disabled', 'disabled');
             }, 500);
         });
 
