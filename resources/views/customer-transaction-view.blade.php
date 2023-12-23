@@ -119,7 +119,9 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+
         console.clear();
+
         $(document).on('click', '#clear_filter', function() {
             $('#filter-form')[0].reset();
             let from_date = $('#from_date').val();
@@ -163,7 +165,13 @@
         function loadUpdatedList(data) {
             console.log(data);
             $('#transactions-list').html('');
-            $.each(data, function(key, value) {
+            var dataArray = Object.values(data);
+            dataArray.sort(function(a, b) {
+                var dateA = new Date(a.created_at);
+                var dateB = new Date(b.created_at);
+                return dateA - dateB;
+            });
+            $.each(dataArray, function(key, value) {
                 let paid = '';
                 let dues = '';
                 let final_dues = '';
@@ -195,6 +203,7 @@
                 `);
             });
         }
+
         $(document).on('click', '#share_wp', function() {
             var url = '';
             let from_date = $('#from_date').val();

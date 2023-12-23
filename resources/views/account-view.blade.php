@@ -130,11 +130,14 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+
         console.clear();
+
         $(document).on('click', '.edit-btn', function() {
             let table = $(this).attr('data-from');
             let id = $(this).attr('id');
         });
+
         $(document).on('click', '.delete-btn', function() {
             let table = $(this).attr('data-from');
             let id = $(this).attr('id');
@@ -170,6 +173,7 @@
                 }
             });
         });
+
         $(document).on('click', '#statement_print', function() {
             let from = $('#from_date').val();
             let to = $('#to_date').val();
@@ -184,6 +188,7 @@
                 console.log(err.responseJSON.message);
             });
         });
+
         $(document).on('click', '#clear_filter', function() {
             $('#filter-form')[0].reset();
             let from_date = $('#from_date').val();
@@ -199,6 +204,7 @@
                 console.log(err.responseJSON.message);
             });
         });
+
         $(document).on('input', '#from_date, #to_date', function() {
             let from_date = $('#from_date').val();
             let to_date = $('#to_date').val();
@@ -213,17 +219,19 @@
                 console.log(err.responseJSON.message);
             });
         });
+
         function isValidDate(dateString) {
             const datePart = dateString.split('GMT')[0].trim();
             return !isNaN(new Date(datePart));
         }
+
         function loadUpdatedList(data) {
             $('#account-list').html('');
             let index = 1;
             var dataArray = Object.values(data);
             dataArray.sort(function(a, b) {
-                var dateA = new Date(a.tnx_date);
-                var dateB = new Date(b.tnx_date);
+                var dateA = new Date(a.created_at);
+                var dateB = new Date(b.created_at);
                 return dateA - dateB;
             });
             $.each(dataArray, function(key, value) {

@@ -93,7 +93,7 @@
                                     <td>{{$index++}}</td>
                                     <td>{{$tnx->tnx_date}}</td>
                                     <td>@if($tnx->tnx_user_name) {{$tnx->tnx_user_name}}, @endif {{$tnx->t_remarks}}</td>
-                                    @if($tnx->t_type == 1)
+                                    @if($tnx->t_type == 1 || $tnx->t_type == 3)
                                     <td>{{$tnx->t_amount}}</td>
                                     <td>0</td>
                                     @elseif($tnx->t_type == 2)

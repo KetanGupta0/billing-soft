@@ -1,7 +1,7 @@
 @include('common.header');
 <style>
     table tr td {
-        font-weight: bolder!important;
+        font-weight: bolder !important;
     }
 </style>
 <div class="main-content">
@@ -129,7 +129,9 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+
         console.clear();
+
         $(document).on('click', '#clear_filter', function() {
             $('#filter-form')[0].reset();
             let from_date = $('#from_date').val();
@@ -172,14 +174,23 @@
 
         function loadUpdatedList(data) {
             $('#transactions-list').html('');
-            $.each(data, function(key, value) {
+            var dataArray = Object.values(data);
+
+            // Sort the array based on tnx_date
+            dataArray.sort(function(a, b) {
+                var dateA = new Date(a.created_at);
+                var dateB = new Date(b.created_at);
+                return dateA - dateB;
+            });
+
+            $.each(dataArray, function(key, value) {
                 let paid = '';
                 let dues = '';
                 let final_dues = '';
                 let amt = value.tnx_amount;
                 if (value.tnx_type == 1) {
                     paid = `<div class="text-success">${value.tnx_amount.toFixed(2)}</div>`;
-                }else if (value.tnx_type == 3) {
+                } else if (value.tnx_type == 3) {
                     paid = `<div class="text-success">${value.tnx_p_amount.toFixed(2)}</div>`;
                 } else if (value.tnx_type == 2) {
                     dues = value.tnx_p_amount != null ? `<div class="text-danger">${value.tnx_p_amount.toFixed(2)}</div>` : `<div class="text-danger">${value.tnx_amount.toFixed(2)}</div>`;
@@ -221,9 +232,9 @@
                 console.log(res);
                 let wadata = '';
                 let url = '';
-                if (res.transactions.length == 0){
+                if (res.transactions.length == 0) {
                     wadata = `Dear ${res.user.p_name}, %0D%0APresent Dues: Rs ${res.user.p_dues}/-%0D%0ANo. of Transactions ${res.transactions.length}`;
-                }else{
+                } else {
                     let start_date = new Date(res.transactions[0].tnx_date);
                     let end_date = new Date(res.transactions[res.transactions.length - 1].tnx_date);
                     sdate = start_date.toLocaleDateString('en-GB');

@@ -2471,7 +2471,7 @@ class AdminController extends Controller
                 $account = Account::find($id);
                 $mergedTransactions = $transactions->concat($userTransactions);
                 $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
-                    return $transaction['tnx_date'] ?? $transaction['t_date'];
+                    return $transaction['created_at'] ?? $transaction['created_at'];
                 });
                 
             return view('account-view', compact('mergedTransactions', 'account'));
@@ -2729,7 +2729,7 @@ class AdminController extends Controller
             $account = Account::find($req->ac_id);
             $mergedTransactions = $transactions->concat($userTransactions);
             $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
-                return $transaction['tnx_date'] ?? $transaction['t_date'];
+                return $transaction['created_at'] ?? $transaction['created_at'];
             });
             // return response()->json($mergedTransactions);
             return view('account-statement', compact('mergedTransactions', 'account'));
@@ -2755,7 +2755,7 @@ class AdminController extends Controller
             }
             $userTransactions = $userTransactionsQuery->get();
             $userTransactions = $userTransactions->sortBy(function ($transaction) {
-                return $transaction['tnx_date'] ?? $transaction['t_date'];
+                return $transaction['created_at'] ?? $transaction['created_at'];
             });
             if ($request->user_type == 1) {
                 $user = CustomerModel::find($request->p_id);
@@ -2798,7 +2798,7 @@ class AdminController extends Controller
         $account = Account::find($request->ac_id);
         $mergedTransactions = $transactions->concat($userTransactions);
         $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
-            return $transaction['tnx_date'] ?? $transaction['t_date'];
+            return $transaction['created_at'] ?? $transaction['created_at'];
         });
         return response()->json($mergedTransactions);
     }
@@ -2819,7 +2819,7 @@ class AdminController extends Controller
         }
         $userTransactions = $userTransactionsQuery->get();
         $userTransactions = $userTransactions->sortBy(function ($transaction) {
-            return $transaction['tnx_date'] ?? $transaction['t_date'];
+            return $transaction['created_at'] ?? $transaction['created_at'];
         });
         return response()->json($userTransactions);
     }
@@ -2842,7 +2842,7 @@ class AdminController extends Controller
             }
             $userTransactions = $userTransactionsQuery->get();
             $userTransactions = $userTransactions->sortBy(function ($transaction) {
-                return $transaction['tnx_date'] ?? $transaction['t_date'];
+                return $transaction['created_at'] ?? $transaction['created_at'];
             });
             if ($request->user_type == 1) {
                 $user = CustomerModel::find($request->p_id);

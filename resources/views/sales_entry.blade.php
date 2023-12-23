@@ -261,15 +261,18 @@
                     });
                 });
             }
+
             getAccountList();
             let currentDate = new Date().toISOString().split('T')[0];
             $('#billDate').val(currentDate);
+
             $(document).on('click', 'body', function() {
                 var excludedInputIds = ['c_name'];
                 if (!excludedInputIds.includes(event.target.id)) {
                     $('#customertable').hide();
                 } else {}
             });
+
             get_parties();
             get_state();
             get_items();
@@ -383,7 +386,7 @@
                     $('#itemsdata tr').each(function(index) {
                         if ($(this).hasClass("highlight_row")) {
                             var id = $(this).attr('id');
-                            $('.pii'+id).click();
+                            $('.pii' + id).click();
                             return false;
                         }
                     });
@@ -1059,7 +1062,7 @@
                     tnx_account: acc
                 }, function(res) {
                     console.log(res);
-                    if(res === true){
+                    if (res === true) {
                         window.location.href = url;
                     }
                 }).fail(function(err) {
