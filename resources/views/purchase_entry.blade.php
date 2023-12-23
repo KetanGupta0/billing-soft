@@ -632,8 +632,8 @@
                 $('#partiesdata tr').each(function(index) {
                     if ($(this).hasClass("highlight_row")) {
                         var id = $(this).attr('id');
-                        $('.pdi'+id).click();
-                        console.log($('.pdi'+id));
+                        $('.pdi' + id).click();
+                        console.log($('.pdi' + id));
                         return false;
                     }
                 });
@@ -800,7 +800,7 @@
                     if ($(this).hasClass("highlight_row")) {
                         var id = $(this).attr('id');
                         var xyz = parseFloat(id);
-                        $('.pii'+id).click();
+                        $('.pii' + id).click();
                         return false;
                     }
                 });
@@ -892,7 +892,7 @@
                 $('#item_conversion_rate').val(result.item_conversion_rate);
                 $('#item_sub_unit').val(result.item_sub_unit);
                 $('#item_gst').val(result.item_gst);
-                if (result.item_gst == 0) {
+                if (result.item_gst == 1) {
                     $('.gst').show();
                     $('#item_purchase_tax_type').val(result.item_purchase_tax_type);
                     $('#item_sale_tax_type').val(result.item_sale_tax_type);
@@ -1104,6 +1104,32 @@
                     }
                 }
             }
+            if ($('#item_gst').val() == 1) {
+                if ($('#item_purchase_tax_type').val() === '') {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Please Select Tax Type (Purchase)",
+                        icon: "error"
+                    });
+                    return;
+                }
+                if ($('#item_sale_tax_type').val() === '') {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Please Select Tax Type (Sale)",
+                        icon: "error"
+                    });
+                    return;
+                }
+                if ($('#item_gst_slab').val() === '') {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Please Select GST Slab",
+                        icon: "error"
+                    });
+                    return;
+                }
+            }
             if (item_stock_whole == 0) {
                 $("#item_stock_whole").focus();
                 $("#item_stock_whole").attr('style', 'border: 1px solid red !important');
@@ -1226,6 +1252,7 @@
                     $('#p_h_pre').val(res.history.p_h_pre);
                     $('#p_h_paid').val(res.history.p_h_paid);
                     $('#p_h_other').val(res.history.p_h_other);
+
                     updateGrandTotal();
 
                     // Calculations
@@ -1247,6 +1274,10 @@
                     });
                 }
             });
+
+            setTimeout(() => {
+                $('#tnx_account').val(parseInt("{{Session::get('tnx_id')}}"));
+            }, 500);
         });
 
         $(document).on('click', '.edit-btn', function() {

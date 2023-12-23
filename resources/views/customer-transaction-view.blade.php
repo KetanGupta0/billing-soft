@@ -79,15 +79,15 @@
                                         <td>{{$transaction->tnx_remark}}</td>
                                         <td>
                                             @if ($transaction->tnx_type == 1)
-                                            <div class="text-success">{{$transaction->tnx_amount}}</div>
+                                            <div class="text-success">{{sprintf('%.2f',$transaction->tnx_amount)}}</div>
                                             @endif
                                         </td>
                                         <td>
                                             @if ($transaction->tnx_type == 2)
-                                            <div class="text-danger">{{$transaction->tnx_amount}}</div>
+                                            <div class="text-danger">{{sprintf('%.2f',$transaction->tnx_amount)}}</div>
                                             @endif
                                         </td>
-                                        <td>{{$transaction->tnx_final_dues}}</td>
+                                        <td>{{sprintf('%.2f',$transaction->tnx_final_dues)}}</td>
                                         <td>
                                             <button type="button" class="btn btn-success edit-btn" data="{{$transaction->tnx_id}}">
                                                 <i class="fa-regular fa-pen-to-square"></i>
@@ -169,9 +169,9 @@
                 let final_dues = '';
                 let amt = value.tnx_amount;
                 if (value.tnx_type == 1) {
-                    paid = `<div class="text-success">${value.tnx_amount}</div>`;
+                    paid = `<div class="text-success">${value.tnx_amount.toFixed(2)}</div>`;
                 } else if (value.tnx_type == 2) {
-                    dues = value.tnx_p_amount != null ? `<div class="text-danger">${value.tnx_p_amount}</div>` : `<div class="text-danger">${value.tnx_amount}</div>`;
+                    dues = value.tnx_p_amount != null ? `<div class="text-danger">${value.tnx_p_amount.toFixed(2)}</div>` : `<div class="text-danger">${value.tnx_amount.toFixed(2)}</div>`;
                 }
                 $('#transactions-list').append(`
                 <tr>
@@ -180,7 +180,7 @@
                     <td>${value.tnx_remark}</td>
                     <td>${paid}</td>
                     <td>${dues}</td>
-                    <td>${value.tnx_final_dues}</td>
+                    <td>${parseFloat(value.tnx_final_dues).toFixed(2)}</td>
                     <td>
                         <button type="button" class="btn btn-success edit-btn" data="${value.tnx_id}">
                             <i class="fa-regular fa-pen-to-square"></i>

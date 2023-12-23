@@ -824,7 +824,7 @@ class AdminController extends Controller
                             'tnx_closing_ac_bal' => $fianlAcBal,
                             'tnx_invoice' => $history->p_h_id
                         ]);
-                    } else {
+                    } elseif ($amt < 0) {
                         $transaction = UserTransaction::create([
                             'tnx_user_id' => $partyID->p_id,
                             'tnx_user_name' => $partyID->p_name,
@@ -2458,17 +2458,22 @@ class AdminController extends Controller
     public function viewAccount($id)
     {
         if (Session::has('admin')) {
+            // $transactionsQuery = Transaction::where('t_ac_id', '=', $id)
+            //     ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
+            // $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $id)
+            //     ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_type as t_type', 'tnx_user_name', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at', 'tnx_p_amount', 'tnx_user_type');
             $transactionsQuery = Transaction::where('t_ac_id', '=', $id)
                 ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
             $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $id)
-                ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_type as t_type', 'tnx_user_name', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at', 'tnx_p_amount', 'tnx_user_type');
-            $transactions = $transactionsQuery->get();
-            $userTransactions = $userTransactionsQuery->get();
-            $mergedTransactions = $transactions->concat($userTransactions);
-            $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
-                return $transaction['tnx_date'] ?? $transaction['t_date'];
-            });
-            $account = Account::find($id);
+                ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
+                $transactions = $transactionsQuery->get();
+                $userTransactions = $userTransactionsQuery->get();
+                $account = Account::find($id);
+                $mergedTransactions = $transactions->concat($userTransactions);
+                $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
+                    return $transaction['tnx_date'] ?? $transaction['t_date'];
+                });
+                
             return view('account-view', compact('mergedTransactions', 'account'));
         } else {
             echo view('login');
@@ -2726,6 +2731,7 @@ class AdminController extends Controller
             $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
                 return $transaction['tnx_date'] ?? $transaction['t_date'];
             });
+            // return response()->json($mergedTransactions);
             return view('account-statement', compact('mergedTransactions', 'account'));
         } else {
             return redirect('/');

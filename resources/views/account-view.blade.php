@@ -2,7 +2,7 @@
 @include('common.header');
 <style>
     table tr td {
-        font-weight: bolder!important;
+        font-weight: bolder !important;
     }
 </style>
 <div class="main-content">
@@ -34,7 +34,7 @@
                                         </div>
                                         <div class="col-lg-2">
                                             <div>
-                                                <div class="btn btn-warning btn-label rounded-pill" id="clear_filter">
+                                                <div class="btn btn-secondary btn-label rounded-pill" id="clear_filter">
                                                     <i class="ri-format-clear label-icon align-middle rounded-pill me-2"></i>Clear
                                                 </div>
                                             </div>
@@ -64,45 +64,52 @@
                                         <th>Delete</th>
                                     </tr>
                                 </thead>
+                                @php
+                                $index=1;
+                                @endphp
                                 <tbody id="account-list">
                                     @if (!empty($mergedTransactions))
-                                        @foreach ($mergedTransactions as $key => $transaction)
-                                        <tr>
-                                            <td>{{ $key + 1 }}</td>
-                                            <td>
-                                                {{ $transaction['tnx_date'] }}
-                                            </td>
-                                            <td>
-                                                @if ($transaction['tnx_user_name']) {{$transaction['tnx_user_name']}}, @endif {{$transaction->t_remarks}}
-                                            </td>
-                                            @if ($transaction->t_type == 1)
-                                            <td><div class="text-success">{{ $transaction['t_amount'] }}</div></td>
-                                            <td></td>
-                                            @elseif ($transaction->t_type == 2 || $transaction->t_type == 3)
-                                            <td></td>
-                                            <td><div class="text-danger">{{ $transaction['t_amount'] }}</div></td>
-                                            @endif
-                                            <td>{{ $transaction->t_final_amount}}</td>
-                                            <td>
-                                                {{-- Edit link or button --}}
-                                                <button type="button" class="btn btn-success edit-btn" <?php echo 'id="' . $transaction['t_id'] . '"';
-                                                                                                        if ($transaction['tnx_user_name']) echo 'data-from="2"';
-                                                                                                        else echo 'data-from="1"' ?>>
-                                                    <i class="fa-regular fa-pen-to-square"></i>
-                                                </button>
-                                                <!-- data-from="1" = transaction table data || data-from="2" = user_transaction table data -->
-                                            </td>
-                                            <td>
-                                                {{-- Delete link or button --}}
-                                                <button type="button" class="btn btn-danger delete-btn" <?php echo 'id="' . $transaction['t_id'] . '"';
-                                                                                                        if ($transaction['tnx_user_name']) echo 'data-from="2"';
-                                                                                                        else echo 'data-from="1"' ?>>
-                                                    <i class="fa-regular fa-trash-can"></i>
-                                                </button>
-                                                <!-- data-from="1" = transaction table data || data-from="2" = user_transaction table data -->
-                                            </td>
-                                        </tr>
-                                        @endforeach
+                                    @foreach ($mergedTransactions as $transaction)
+                                    <tr>
+                                        <td>{{ $index++ }}</td>
+                                        <td>
+                                            {{ $transaction['tnx_date'] }}
+                                        </td>
+                                        <td>
+                                            @if ($transaction['tnx_user_name']) {{$transaction['tnx_user_name']}}, @endif {{$transaction->t_remarks}}
+                                        </td>
+                                        @if ($transaction->t_type == 1)
+                                        <td>
+                                            <div class="text-success">{{ sprintf('%.2f',$transaction['t_amount']) }}</div>
+                                        </td>
+                                        <td></td>
+                                        @elseif ($transaction->t_type == 2 || $transaction->t_type == 3)
+                                        <td></td>
+                                        <td>
+                                            <div class="text-danger">{{ sprintf('%.2f',$transaction['t_amount']) }}</div>
+                                        </td>
+                                        @endif
+                                        <td>{{ sprintf('%.2f',$transaction->t_final_amount) }}</td>
+                                        <td>
+                                            {{-- Edit link or button --}}
+                                            <button type="button" class="btn btn-success edit-btn" <?php echo 'id="' . $transaction['t_id'] . '"';
+                                                                                                    if ($transaction['tnx_user_name']) echo 'data-from="2"';
+                                                                                                    else echo 'data-from="1"' ?>>
+                                                <i class="fa-regular fa-pen-to-square"></i>
+                                            </button>
+                                            <!-- data-from="1" = transaction table data || data-from="2" = user_transaction table data -->
+                                        </td>
+                                        <td>
+                                            {{-- Delete link or button --}}
+                                            <button type="button" class="btn btn-danger delete-btn" <?php echo 'id="' . $transaction['t_id'] . '"';
+                                                                                                    if ($transaction['tnx_user_name']) echo 'data-from="2"';
+                                                                                                    else echo 'data-from="1"' ?>>
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                            <!-- data-from="1" = transaction table data || data-from="2" = user_transaction table data -->
+                                        </td>
+                                    </tr>
+                                    @endforeach
                                     @endif
                                 </tbody>
                             </table>
@@ -141,19 +148,24 @@
                 confirmButtonText: "Yes, delete it!"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $.post("{{url('delete-transaction-record')}}", {
-                        table: table,
-                        id: id
-                    }, function(res) {
-                        if (res === true) {
-                            location.reload();
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: res
-                            });
-                        }
+                    // $.post("{{url('delete-transaction-record')}}", {
+                    //     table: table,
+                    //     id: id
+                    // }, function(res) {
+                    //     if (res === true) {
+                    //         location.reload();
+                    //     } else {
+                    //         Swal.fire({
+                    //             icon: 'error',
+                    //             title: 'Oops...',
+                    //             text: res
+                    //         });
+                    //     }
+                    // });
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Wait...',
+                        text: 'Please contact Specbits!'
                     });
                 }
             });
@@ -201,38 +213,42 @@
                 console.log(err.responseJSON.message);
             });
         });
-
         function isValidDate(dateString) {
             const datePart = dateString.split('GMT')[0].trim();
             return !isNaN(new Date(datePart));
         }
-
         function loadUpdatedList(data) {
-            console.log(data);
             $('#account-list').html('');
-            $.each(data,function(key,value){
+            let index = 1;
+            var dataArray = Object.values(data);
+            dataArray.sort(function(a, b) {
+                var dateA = new Date(a.tnx_date);
+                var dateB = new Date(b.tnx_date);
+                return dateA - dateB;
+            });
+            $.each(dataArray, function(key, value) {
                 let username = '';
                 let t_type = 0;
-                let paid = 0;
-                let dues = 0;
+                let paid = '';
+                let dues = '';
                 let data_from = 1;
-                if(value.tnx_user_name){
-                    username = value.tnx_user_name+',';
+                if (value.tnx_user_name) {
+                    username = value.tnx_user_name + ',';
                     data_from = 2;
                 }
-                if(value.t_type == 1){
-                    paid = value.t_amount;
-                }else if(value.t_type == 2 || value.t_type == 3){
-                    dues = value.t_amount;
+                if (value.t_type == 1) {
+                    paid = `<div class="text-success">${value.t_amount.toFixed(2)}</div>`;
+                } else if (value.t_type == 2 || value.t_type == 3) {
+                    dues = `<div class="text-danger">${value.t_amount.toFixed(2)}</div>`;
                 }
                 $('#account-list').append(`
                     <tr>
-                        <td>${key+1}</td>
+                        <td>${index++}</td>
                         <td>${value.tnx_date}</td>
                         <td>${username} ${value.t_remarks}</td>
                         <td>${paid}</td>
                         <td>${dues}</td>
-                        <td>${value.t_final_amount}</td>
+                        <td>${value.t_final_amount.toFixed(2)}</td>
                         <td>
                             <button type="button" class="btn btn-success edit-btn" id="${value.t_id}" data-from="${data_from}">
                                 <i class="fa-regular fa-pen-to-square"></i>
