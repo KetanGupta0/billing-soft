@@ -61,7 +61,7 @@
 
 <script>
     $(document).ready(function() {
-        console.clear();
+        // console.clear();
         function stockAlert() {
             $.ajax({
                 url: "{{ url('stock-alert') }}",

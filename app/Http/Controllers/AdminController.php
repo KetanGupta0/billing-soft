@@ -2466,14 +2466,14 @@ class AdminController extends Controller
                 ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
             $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $id)
                 ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
-                $transactions = $transactionsQuery->get();
-                $userTransactions = $userTransactionsQuery->get();
-                $account = Account::find($id);
-                $mergedTransactions = $transactions->concat($userTransactions);
-                $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
-                    return $transaction['created_at'] ?? $transaction['created_at'];
-                });
-                
+            $transactions = $transactionsQuery->get();
+            $userTransactions = $userTransactionsQuery->get();
+            $account = Account::find($id);
+            $mergedTransactions = $transactions->concat($userTransactions);
+            $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
+                return $transaction['created_at'] ?? $transaction['created_at'];
+            });
+
             return view('account-view', compact('mergedTransactions', 'account'));
         } else {
             echo view('login');
@@ -2828,7 +2828,6 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $from_date = $request->input('from_date');
-
             $to_date = $request->input('to_date');
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
@@ -2852,6 +2851,101 @@ class AdminController extends Controller
 
             return response()->json(['transactions' => $userTransactions, 'from_date' => $from_date, 'to_date' => $to_date, 'user' => $user, 'status' => true]);
         } else {
+        }
+    }
+
+    public function printReport(Request $request, $type)
+    {
+        if (Session::has('admin')) {
+            $for = 0;
+            if ($type == 'purchase') {
+                $for = 1;
+                $history = PurchaseHistory::where('p_h_bill_date', '!=', NULL);
+            } elseif ($type == 'sales') {
+                $for = 2;
+                $history = SalesHistory::where('s_h_bill_date', '!=', NULL);
+            } else {
+                if ($request->type == 1) {
+                    return redirect()->back();
+                } elseif ($request->type == 2) {
+                    return response()->json(['message' => 'Invalid route invoked!'], 400);
+                } else {
+                    return response()->json(['message' => 'Something went wrong!'], 400);
+                }
+            }
+            $from_date = $request->input('from_date');
+            $to_date = $request->input('to_date');
+            $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
+            $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
+            $histories = [];
+            if ($type == 'purchase') {
+                if ($from_date != null) {
+                    $history->whereDate('p_h_bill_date', '>=', $from_date);
+                }
+                if ($to_date != null) {
+                    $history->whereDate('p_h_bill_date', '<=', $to_date);
+                }
+            } elseif ($type == 'sales') {
+                if ($from_date != null) {
+                    $history->whereDate('s_h_bill_date', '>=', $from_date);
+                }
+                if ($to_date != null) {
+                    $history->whereDate('s_h_bill_date', '<=', $to_date);
+                }
+            }
+            $histories = $history->get();
+            $data = [];
+            foreach ($histories as $histo) {
+                $temp = [];
+                if ($type == 'purchase') {
+                    $party = PartyModel::find($histo->p_h_party_id);
+                    $histoItems = PurchaseItem::where('p_i_p_h_id', '=', $histo->p_h_id)->get();
+                    foreach ($histoItems as $item) {
+                        $product = ItemsModel::find($item->p_i_item_id);
+                        if ($product) {
+                            if ($product->item_gst == 1) {
+                                $item['gst'] = $product->item_gst_slab;
+                                $temp['item'][] = $item->toArray();
+                            }else{
+                                continue;
+                            }
+                        }
+                    }
+                    $temp['p_name'] = $party->p_name;
+                    array_push($data, array_merge($temp, $histo->toArray()));
+                } elseif ($type == 'sales') {
+                    $customer = CustomerModel::find($histo->s_h_customer_id);
+                    $histoItems = SalesItems::where('s_i_s_h_id', '=', $histo->s_h_id)->get();
+                    foreach ($histoItems as $item) {
+                        $product = ItemsModel::find($item->s_i_item_id);
+                        if ($product) {
+                            if ($product->item_gst == 1) {
+                                $item['gst'] = $product->item_gst_slab;
+                                $temp['item'][] = $item->toArray();
+                            }else{
+                                continue;
+                            }
+                        }
+                    }
+                    $temp['c_name'] = $customer->c_name;
+                    array_push($data, array_merge($temp, $histo->toArray()));
+                }
+            }
+            if ($request->type == 1) {
+                return view('gst',compact('data','for'));
+            } elseif ($request->type == 2) {
+                return response()->json($data);
+            } else {
+                return response()->json(['message' => 'Something went wrong!'], 400);
+            }
+        } else {
+            if ($request->type == 1) {
+                return redirect()->back();
+            } elseif ($request->type == 2) {
+                return response()->json(['message' => 'Unauthorized access!'], 401);
+            } else {
+                return response()->json(['message' => 'Something went wrong!'], 400);
+            }
         }
     }
 }

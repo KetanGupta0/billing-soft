@@ -7,6 +7,45 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
+                        <form action="{{url('print-report-sales')}}" method="post" id="filter-form">
+                            @csrf
+                            <div class="row border-bottom p-3 d-flex align-items-center">
+                                <div class="col-lg-7">
+                                    <h2 class="m-0">Sales Report</h2>
+                                </div>
+                                <div class="col-lg-5">
+                                    <div class="row d-flex align-items-center">
+                                        <div class="col-lg-4">
+                                            <div class="form-floating">
+                                                <input type="hidden" name="type" value="1">
+                                                <input type="date" class="form-control" id="from_date" placeholder="From Date" name="from_date" onfocus="this.showPicker()">
+                                                <label for="from_date">From Date</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <div class="form-floating">
+                                                <input type="date" class="form-control" id="to_date" placeholder="To Date" name="to_date" onfocus="this.showPicker()">
+                                                <label for="to_date">To Date</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <div>
+                                                <div class="btn btn-secondary btn-label rounded-pill" id="clear_filter">
+                                                    <i class="ri-format-clear label-icon align-middle rounded-pill me-2"></i>Clear
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <div>
+                                                <button type="submit" class="btn btn-success btn-label rounded-pill" id="statement_print">
+                                                    <i class="ri-printer-fill label-icon align-middle rounded-pill me-2"></i>Print
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                         <div class="card-body">
                             <table id="example" class="table table-bordered dt-responsive nowrap table-striped align-middle" style="width:100%">
                                 <thead>
@@ -15,6 +54,7 @@
                                         <th data-ordering="false">Date</th>
                                         <th data-ordering="false">Bill No.</th>
                                         <th data-ordering="false">Party Name</th>
+                                        <th data-ordering="false">Total Amt.</th>
                                         <th>Edit</th>
                                         <th>Delete</th>
                                     </tr>
@@ -25,6 +65,7 @@
                                         <td>06-03-2023</td>
                                         <td>2142</td>
                                         <td>Avinash Kumar</td>
+                                        <td>555</td>
                                         <td>
                                             <div class="edit">
                                                 <a href="{{url('/edit-sale')}}" class="btn btn-success btn-label rounded-pill"><i class="ri-pencil-line label-icon align-middle rounded-pill me-2"></i>
@@ -146,21 +187,21 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
-            console.clear();
+            // console.clear();
             populateSalesEntryList();
 
             function populateSalesEntryList() {
                 $.post("{{url('fetch-sales-entries')}}", {}, function(res) {
-                    console.log(res);
                     $('#example').DataTable().destroy();
                     $('#salesEntryList').html(``);
-                    $.each(res,function(key,value){
+                    $.each(res, function(key, value) {
                         $('#salesEntryList').append(`
                             <tr>
                                 <td>${key+1}</td>
                                 <td>${value.s_h_bill_date}</td>
                                 <td>${value.s_h_bill_no}</td>
                                 <td>${value.c_name}</td>
+                                <td>${value.s_h_total}</td>
                                 <td>
                                     <div class="edit">
                                         <a href="{{url('/edit-sale-${value.s_h_id}')}}" class="btn btn-success btn-label rounded-pill"><i class="ri-pencil-line label-icon align-middle rounded-pill me-2"></i>
@@ -177,7 +218,73 @@
                         `);
                     });
                     $('#example').DataTable();
-                }).fail(function(err) {console.log(err);});
+                }).fail(function(err) {
+                    console.log(err);
+                });
+            }
+
+            $(document).on('click', '#clear_filter', function() {
+                $('#filter-form')[0].reset();
+                let from_date = $('#from_date').val();
+                let to_date = $('#to_date').val();
+                $.post('print-report-sales', {
+                    type: 2,
+                    from_date: from_date,
+                    to_date: to_date
+                }, function(res) {
+                    loadUpdatedList(res);
+                }).fail(function(err) {
+                    console.log(err.responseJSON.message);
+                });
+            });
+
+            function loadUpdatedList(data) {
+                console.log(data);
+                $('#example').DataTable().destroy();
+                $('#salesEntryList').html(``);
+                $.each(data, function(key, value) {
+                    $('#salesEntryList').append(`
+                            <tr>
+                                <td>${key+1}</td>
+                                <td>${value.s_h_bill_date}</td>
+                                <td>${value.s_h_bill_no}</td>
+                                <td>${value.c_name}</td>
+                                <td>${value.s_h_total}</td>
+                                <td>
+                                    <div class="edit">
+                                        <a href="{{url('/edit-sale-${value.s_h_id}')}}" class="btn btn-success btn-label rounded-pill"><i class="ri-pencil-line label-icon align-middle rounded-pill me-2"></i>
+                                            Edit</a>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="remove">
+                                        <button type="button" class="btn btn-danger btn-label rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteRecordModal"><i class="ri-delete-bin-line label-icon align-middle rounded-pill me-2"></i>
+                                            Remove</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
+                });
+                $('#example').DataTable();
+            }
+
+            $(document).on('input', '#from_date, #to_date', function() {
+                let from_date = $('#from_date').val();
+                let to_date = $('#to_date').val();
+                $.post('print-report-sales', {
+                    type: 2,
+                    from_date: from_date,
+                    to_date: to_date
+                }, function(res) {
+                    loadUpdatedList(res);
+                }).fail(function(err) {
+                    console.log(err.responseJSON.message);
+                });
+            });
+
+            function isValidDate(dateString) {
+                const datePart = dateString.split('GMT')[0].trim();
+                return !isNaN(new Date(datePart));
             }
         });
     </script>

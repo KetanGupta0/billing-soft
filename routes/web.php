@@ -104,3 +104,4 @@ Route::get('/fetch-alert-items',[AdminController::class,'fetchAlertItemsAJAX']);
 Route::post('/filter-account-list',[AdminController::class,'filterAccountListAJAX']);
 Route::post('/filter-user-transaction-list',[AdminController::class,'filterUserTransactionListAJAX']);
 Route::post('/generate-user-statement-wplink',[AdminController::class,'generateUserStatementWPLinkAJAX']);
+Route::post('/print-report-{type}',[AdminController::class,'printReport']);
