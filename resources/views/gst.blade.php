@@ -42,7 +42,7 @@
         td:last-child,
         th:last-child {
             font-weight: 600;
-            text-align: right;
+            text-align: center;
             border-right: 1px solid #fff !important;
         }
 
@@ -90,13 +90,23 @@
                                     <th>GST No</th>
                                     <th>State</th>
                                     <th>Taxable Amount</th>
-                                    <th>CGST Amount</th>
-                                    <th>SGST Amount</th>
-                                    <th>IGST Amount</th>
+                                    <th>CGST</th>
+                                    <th>SGST</th>
+                                    <th>IGST</th>
                                     <th>Total Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $final = 0;
+                                    $taxableAmt = 0;
+                                @endphp
+                                {{-- 
+                                    For defines Purchase and Sales
+                                    For example:
+                                    if "for" contains 1, it means this report belongs to purchase
+                                    and if "for" contains 2, it means this report belongs to sales
+                                 --}}
                                 @if ($for == 1)
                                     @foreach ($data as $d)
                                         <tr>
@@ -104,36 +114,82 @@
                                             <td>{{ $d['p_h_bill_date'] }}</td>
                                             <td>{{ $d['p_h_bill_no'] }}</td>
                                             <td>{{ $d['p_name'] }}</td>
-                                            <td>251SPC54124</td>
-                                            <td>Bihar</td>
-                                            <td>75000.00</td>
-                                            <td>0.00</td>
-                                            <td>0.00</td>
-                                            <td>10000.00</td>
-                                            <td>95000.00</td>
+                                            <td>{{ $d['p_gst'] }}</td>
+                                            <td>{{ $d['p_state_name'] }}</td>
+                                            <td>
+                                                @php
+                                                    foreach ($d['item'] as $item) {
+                                                        $gst = (float) $item['gst'];
+                                                        $taxableAmt += (float) $item['p_i_rate'] * (100 / (100 + $gst)) * (float) $item['p_i_qty'];
+                                                    }
+                                                @endphp
+                                                {{ sprintf('%.2f', $taxableAmt) }}
+                                            </td>
+                                            @php
+                                                $temp = 0;
+                                                $cgst = 0;
+                                                $sgst = 0;
+                                                $igst = 0;
+                                                foreach ($d['item'] as $item) {
+                                                    $gst = (float) $item['gst'];
+                                                    $temp += ((float) $item['p_i_rate'] - (float) $item['p_i_rate'] * (100 / (100 + $gst))) * (float) $item['p_i_qty'];
+                                                }
+                                                if ($d['p_state'] == 4) {
+                                                    $cgst = $sgst = $temp / 2;
+                                                } else {
+                                                    $igst = $temp;
+                                                }
+                                                $final = $temp + $taxableAmt;
+                                            @endphp
+                                            <td>{{ sprintf('%.2f', $cgst) }}</td>
+                                            <td>{{ sprintf('%.2f', $sgst) }}</td>
+                                            <td>{{ sprintf('%.2f', $igst) }}</td>
+                                            <td>{{ sprintf('%.2f', $final) }}</td>
                                         </tr>
                                     @endforeach
                                 @else
                                     @foreach ($data as $d)
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
-                                            <td>16/11/2023</td>
-                                            <td>VO123</td>
-                                            <td>SpecBits IT</td>
-                                            <td>251SPC54124</td>
-                                            <td>Bihar</td>
-                                            <td>75000.00</td>
-                                            <td>0.00</td>
-                                            <td>0.00</td>
-                                            <td>10000.00</td>
-                                            <td>95000.00</td>
+                                            <td>{{ $d['s_h_bill_date'] }}</td>
+                                            <td>{{ $d['s_h_bill_no'] }}</td>
+                                            <td>{{ $d['c_name'] }}</td>
+                                            <td>{{ $d['c_gst'] }}</td>
+                                            <td>{{ $d['c_state_name'] }}</td>
+                                            <td>
+                                                @php
+                                                    foreach ($d['item'] as $item) {
+                                                        $gst = (float) $item['gst'];
+                                                        $taxableAmt += (float) $item['s_i_rate'] * (100 / (100 + $gst)) * (float) $item['s_i_qty'];
+                                                    }
+                                                @endphp
+                                                {{ sprintf('%.2f', $taxableAmt) }}
+                                            </td>
+                                            @php
+                                                $temp = 0;
+                                                $cgst = 0;
+                                                $sgst = 0;
+                                                $igst = 0;
+                                                foreach ($d['item'] as $item) {
+                                                    $temp += ((float) $item['s_i_rate'] - (float) $item['s_i_rate'] * (100 / (100 + $item['s_i_tax']))) * (float) $item['s_i_qty'];
+                                                }
+                                                if ($d['c_state'] == 4) {
+                                                    $cgst = $sgst = $temp / 2;
+                                                } else {
+                                                    $igst = $temp;
+                                                }
+                                                $final = $temp + $taxableAmt;
+                                            @endphp
+                                            <td>{{ sprintf('%.2f', $cgst) }}</td>
+                                            <td>{{ sprintf('%.2f', $sgst) }}</td>
+                                            <td>{{ sprintf('%.2f', $igst) }}</td>
+                                            <td>{{ sprintf('%.2f', $final) }}</td>
                                         </tr>
                                     @endforeach
                                 @endif
                             </tbody>
                         </table>
                     </div>
-
                 </div>
             </div>
         </div>

@@ -2911,7 +2911,11 @@ class AdminController extends Controller
                             }
                         }
                     }
+                    $states = StateModel::find($party->p_state);
                     $temp['p_name'] = $party->p_name;
+                    $temp['p_gst'] = $party->p_gst;
+                    $temp['p_state'] = $party->p_state;
+                    $temp['p_state_name'] = $states->s_name;
                     array_push($data, array_merge($temp, $histo->toArray()));
                 } elseif ($type == 'sales') {
                     $customer = CustomerModel::find($histo->s_h_customer_id);
@@ -2927,7 +2931,11 @@ class AdminController extends Controller
                             }
                         }
                     }
+                    $states = StateModel::find($customer->c_state);
                     $temp['c_name'] = $customer->c_name;
+                    $temp['c_gst'] = $customer->c_gst;
+                    $temp['c_state'] = $customer->c_state;
+                    $temp['c_state_name'] = $states->s_name;
                     array_push($data, array_merge($temp, $histo->toArray()));
                 }
             }
