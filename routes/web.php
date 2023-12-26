@@ -105,3 +105,5 @@ Route::post('/filter-account-list',[AdminController::class,'filterAccountListAJA
 Route::post('/filter-user-transaction-list',[AdminController::class,'filterUserTransactionListAJAX']);
 Route::post('/generate-user-statement-wplink',[AdminController::class,'generateUserStatementWPLinkAJAX']);
 Route::post('/print-report-{type}',[AdminController::class,'printReport']);
+Route::get('/manage-expenses',[AdminController::class,'manageExpensesView']);
+Route::post('/save-expense',[AdminController::class,'makeExpenseAJAX']);

@@ -2956,4 +2956,12 @@ class AdminController extends Controller
             }
         }
     }
+
+    public function manageExpensesView(){
+        return view('manage-expenses');
+    }
+
+    public function makeExpenseAJAX(Request $request){
+        // 
+    }
 }

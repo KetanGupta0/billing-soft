@@ -342,14 +342,20 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->is('manage-parties') ? 'active' : '' }}"
-                                href="{{ url('/manage-parties') }}">
+                                href="{{ url('/manage-parties') }}" style="width: 250px;">
                                 <i class="ri-team-line"></i> <span data-key="t-manage-parties">Manage Parties</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->is('manage-accounts') ? 'active' : '' }}"
-                                href="{{ url('/manage-accounts') }}">
+                                href="{{ url('/manage-accounts') }}" style="width: 250px;">
                                 <i class="ri-team-line"></i> <span data-key="t-manage-accounts">Manage Accounts</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link {{ request()->is('manage-expenses') ? 'active' : '' }}"
+                                href="{{ url('/manage-expenses') }}" style="width: 250px;">
+                                <i class="ri-team-line"></i> <span data-key="t-manage-expenses">Manage Expenses</span>
                             </a>
                         </li>
                         <li class="nav-item">
