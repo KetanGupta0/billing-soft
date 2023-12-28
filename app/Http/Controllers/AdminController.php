@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AdminModel;
 use App\Models\CustomerModel;
+use App\Models\Expense;
+use App\Models\ExpenseRecord;
 use App\Models\ItemsModel;
 use App\Models\PartyModel;
 use App\Models\SlabModel;
@@ -2958,10 +2960,62 @@ class AdminController extends Controller
     }
 
     public function manageExpensesView(){
-        return view('manage-expenses');
+        if(Session::has('admin')){
+            return view('manage-expenses');
+        }else{
+            return redirect('/');
+        }
+    }
+
+    public function loadExpenseListAJAX(){
+        if(Session::has('admin')){
+            return response()->json(Expense::all());
+        }else{
+            return response()->json(['message','Login is required!'],400);
+        }
     }
 
     public function makeExpenseAJAX(Request $request){
-        // 
+        if(Session::has('admin')){
+            $request->validate([
+                'name' => 'required|string'
+            ],[
+                'name.required' => 'Expense name is required!',
+                'name.string' => 'Invalid expense name!'
+            ]);
+            $check = Expense::where('expense_name','=',$request->name)->first();
+            if($check){
+                return response()->json(['message','Expense already exists!'],400);
+            }else{
+                $result = Expense::create([
+                    'expense_name' => $request->name
+                ]);
+                if($result){
+                    return response()->json(Expense::all());
+                }else{
+                    return response()->json(['message' => 'Something went wrong!'],400);
+                }
+            }
+        }
+    }
+
+    public function viewExpenseRecords($id){
+        if(Session::has('admin')){
+            $records = ExpenseRecord::where('e_r_for','=',$id)->get();
+            return view('manage-expense-records',compact('records'));
+        }else{
+            return redirect('/');
+        }
+    }
+
+    public function deleteExpenseAJAX(Request $request){
+        if(Session::has('admin')){
+            $data = Expense::find($request->id);
+            if($data){
+                $data->delete();
+                return response()->json(true);
+            }
+            return response()->json(['message' => 'Something went wrong!'],400);
+        }
     }
 }

@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('expenses', function (Blueprint $table) {
+        Schema::create('expense_records', function (Blueprint $table) {
             $table->id();
-            $table->string('expense_name');
+            $table->string('e_r_name');
+            $table->string('e_r_amount');
+            $table->string('e_r_ac_from');
+            $table->string('e_r_for');
+            $table->string('e_r_by');
+            $table->string('e_r_by_user_type');
+            $table->string('e_r_status')->default(0);
             $table->timestamps();
         });
     }
@@ -23,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('expenses');
+        Schema::dropIfExists('expense_records');
     }
 };

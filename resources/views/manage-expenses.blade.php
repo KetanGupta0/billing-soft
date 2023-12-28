@@ -18,7 +18,7 @@
                 </div>
                 <div class="d-flex gap-2 justify-content-center mt-4 mb-2">
                     <button type="button" class="btn w-sm btn-light" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn w-sm btn-danger " id="delete-record" data="0">Yes, Delete
+                    <button type="button" class="btn w-sm btn-danger" id="delete-record" data="0">Yes, Delete
                         It!</button>
                 </div>
             </div>
@@ -60,6 +60,60 @@
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
+<div id="expenseEntry" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Expense Entry</h4>
+                <button type="button" class="btn-close btn btn-danger rounded-circle" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newForm">
+                    <div class="mb-3 card p-2 ">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" name="e_amount" id="e_amount"
+                                        placeholder="">
+                                    <label for="e_amount">Amount<span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" name="e_Date" id="e_Date"
+                                        placeholder="" onfocus="showPicker()">
+                                    <label for="e_Date">Date<span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" name="e_account" id="e_account"
+                                        placeholder="">
+                                    <label for="e_account">Account<span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <div class="form-floating">
+                                    <textarea class="form-control" name="e_remarks" id="e_remarks" style="height: 150px!important; resize:none!important;"></textarea>
+                                    <label for="e_remarks">Description<span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 mt-2">
+                        <div class="w-100 d-flex justify-content-end">
+                            <div id="add_and_new" data-role="2" class="btn btn-outline-primary rounded-pill me-3">Save
+                                & New</div>
+                            <div id="add" data-role="1" class="btn btn-outline-success rounded-pill">Save</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 
 <div class="main-content">
     <div class="page-content">
@@ -85,43 +139,7 @@
                                         <th width="40%">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="expenseList">
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Test</td>
-                                        <td>
-                                            <div class="row">
-                                                <div class="col-lg-4">
-                                                    <div>
-                                                        <div class="btn btn-secondary btn-label rounded-pill"
-                                                            id="clear_filter">
-                                                            <i
-                                                                class="ri-format-clear label-icon align-middle rounded-pill me-2"></i>Entry
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-4">
-                                                    <div>
-                                                        <div class="btn btn-warning btn-label rounded-pill"
-                                                            id="clear_filter">
-                                                            <i
-                                                                class="ri-format-clear label-icon align-middle rounded-pill me-2"></i>View
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-4">
-                                                    <div>
-                                                        <div class="btn btn-danger btn-label rounded-pill"
-                                                            id="clear_filter">
-                                                            <i
-                                                                class="ri-format-clear label-icon align-middle rounded-pill me-2"></i>Delete
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="expenseList"></tbody>
                             </table>
                         </div>
                     </div>
@@ -140,21 +158,114 @@
             }
         });
 
+        function updateList(res) {
+            $('#example').DataTable().destroy();
+            console.log(res);
+            $('#expenseList').html(``);
+            $.each(res, function(key, value) {
+                $('#expenseList').append(`
+                    <tr>
+                        <td>${key+1}</td>
+                        <td>${value.expense_name}</td>
+                        <td>
+                            <div class="row">
+                                <div class="col-lg-4">
+                                    <div>
+                                        <div class="btn btn-secondary btn-label rounded-pill expense_entry" data-id="${value.id}" data-bs-toggle="modal"
+                                data-bs-target="#expenseEntry">
+                                            <i class="ri-quill-pen-line label-icon align-middle rounded-pill me-2"></i>Entry
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div>
+                                        <div class="btn btn-warning btn-label rounded-pill expense_view" data-id="${value.id}">
+                                            <i class="ri-eye-line label-icon align-middle rounded-pill me-2"></i>View
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div>
+                                        <div class="btn btn-danger btn-label rounded-pill expense_delete" data-id="${value.id}" data-bs-toggle="modal"
+                                data-bs-target="#deleteRecordModal">
+                                            <i class="ri-delete-bin-2-line label-icon align-middle rounded-pill me-2"></i>Delete
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            });
+            $('#example').DataTable();
+        }
+
+        function pageSetup() {
+            $.get("{{ url('load-expense-list') }}", function(res) {
+                updateList(res);
+            }).fail(function(err) {
+                console.log(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.responseJSON.message
+                });
+            });
+        }
+
+        pageSetup();
+
         $(document).on('click', '#save, #save_and_new', function() {
             const name = $('#expense_name').val();
             $.post("{{ url('save-expense') }}", {
                 name: name
             }, function(res) {
-                console.log(res);
+                updateList(res);
             }).fail(function(err) {
-                alert(err.responseJSON.message);
+                console.log(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.responseJSON.message
+                });
             });
             $('#newForm')[0].reset();
-            if($(this).attr('data-role') == '1'){
+            if ($(this).attr('data-role') == '1') {
                 $('#addExpense').modal('hide');
-            }else if($(this).attr('data-role') == '2'){
+            } else if ($(this).attr('data-role') == '2') {
                 return;
             }
+        });
+
+        $(document).on('click', '.expense_entry', function() {});
+
+        $(document).on('click', '.expense_view', function() {
+            let id = $(this).attr('data-id');
+            let url = "<?php echo url('expense-view-" + id + "'); ?>";
+            location.href = url;
+        });
+
+        $(document).on('click', '.expense_delete', function() {
+            let id = $(this).attr('data-id');
+            $('#delete-record').attr('data', id);
+        });
+
+        $(document).on('click', '#delete-record', function() {
+            $.post("{{ url('delete-expence') }}", {
+                id: $(this).attr('data')
+            }, function(res) {
+                if (res === true) {
+                    pageSetup();
+                    $('#deleteRecordModal').modal('hide');
+                }
+            }).fail(function(err) {
+                console.log(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.responseJSON.message
+                });
+            });
         });
     });
 </script>

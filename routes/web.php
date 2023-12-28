@@ -106,4 +106,7 @@ Route::post('/filter-user-transaction-list',[AdminController::class,'filterUserT
 Route::post('/generate-user-statement-wplink',[AdminController::class,'generateUserStatementWPLinkAJAX']);
 Route::post('/print-report-{type}',[AdminController::class,'printReport']);
 Route::get('/manage-expenses',[AdminController::class,'manageExpensesView']);
+Route::get('/load-expense-list',[AdminController::class,'loadExpenseListAJAX']);
 Route::post('/save-expense',[AdminController::class,'makeExpenseAJAX']);
+Route::get('/expense-view-{id}',[AdminController::class,'viewExpenseRecords']);
+Route::post('/delete-expence',[AdminController::class,'deleteExpenseAJAX']);
