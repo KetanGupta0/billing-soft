@@ -110,3 +110,4 @@ Route::get('/load-expense-list',[AdminController::class,'loadExpenseListAJAX']);
 Route::post('/save-expense',[AdminController::class,'makeExpenseAJAX']);
 Route::get('/expense-view-{id}',[AdminController::class,'viewExpenseRecords']);
 Route::post('/delete-expence',[AdminController::class,'deleteExpenseAJAX']);
+Route::post('/save-new-expense-record',[AdminController::class,'saveNewExpenseRecord']);

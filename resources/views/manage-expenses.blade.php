@@ -69,7 +69,7 @@
                     aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="newForm">
+                <form id="newEntryForm">
                     <div class="mb-3 card p-2 ">
                         <div class="row g-3">
                             <div class="col-lg-6">
@@ -88,14 +88,15 @@
                             </div>
                             <div class="col-lg-12">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" name="e_account" id="e_account"
-                                        placeholder="">
-                                    <label for="e_account">Account<span class="text-danger">*</span></label>
+                                    <select class="form-select" id="e_account" name="e_account"
+                                        placeholder=""></select>
+                                    <label for="e_account">Account</label>
                                 </div>
                             </div>
                             <div class="col-lg-12">
                                 <div class="form-floating">
-                                    <textarea class="form-control" name="e_remarks" id="e_remarks" style="height: 150px!important; resize:none!important;"></textarea>
+                                    <textarea class="form-control" name="e_remarks" id="e_remarks"
+                                        style="height: 150px!important; resize:none!important;"></textarea>
                                     <label for="e_remarks">Description<span class="text-danger">*</span></label>
                                 </div>
                             </div>
@@ -103,9 +104,12 @@
                     </div>
                     <div class="col-lg-12 mt-2">
                         <div class="w-100 d-flex justify-content-end">
-                            <div id="add_and_new" data-role="2" class="btn btn-outline-primary rounded-pill me-3">Save
+                            <div id="e_save_and_new" data-role="2" class="btn btn-outline-primary rounded-pill me-3"
+                                data-id="0">Save
                                 & New</div>
-                            <div id="add" data-role="1" class="btn btn-outline-success rounded-pill">Save</div>
+                            <div id="e_save" data-role="1" class="btn btn-outline-success rounded-pill"
+                                data-id="0">Save
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -160,7 +164,6 @@
 
         function updateList(res) {
             $('#example').DataTable().destroy();
-            console.log(res);
             $('#expenseList').html(``);
             $.each(res, function(key, value) {
                 $('#expenseList').append(`
@@ -201,6 +204,9 @@
         }
 
         function pageSetup() {
+            let currentDate = new Date();
+            let formattedDate = currentDate.toISOString().split('T')[0];
+            $('#e_Date').val(formattedDate);
             $.get("{{ url('load-expense-list') }}", function(res) {
                 updateList(res);
             }).fail(function(err) {
@@ -212,6 +218,18 @@
                 });
             });
         }
+
+        function getAccountList() {
+            $.get("{{ url('fetch-account-list') }}", function(res) {
+                $('#e_account').html(`<option value="">Select</option>`);
+                $.each(res, function(key, val) {
+                    $('#e_account').append(
+                        `<option value="${val.ac_id}">${val.ac_name}</option>`);
+                });
+            });
+        }
+
+        getAccountList();
 
         pageSetup();
 
@@ -237,7 +255,11 @@
             }
         });
 
-        $(document).on('click', '.expense_entry', function() {});
+        $(document).on('click', '.expense_entry', function() {
+            let id = $(this).attr('data-id');
+            $('#e_save_and_new').attr('data-id', id);
+            $('#e_save').attr('data-id', id);
+        });
 
         $(document).on('click', '.expense_view', function() {
             let id = $(this).attr('data-id');
@@ -259,6 +281,43 @@
                     $('#deleteRecordModal').modal('hide');
                 }
             }).fail(function(err) {
+                console.log(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.responseJSON.message
+                });
+            });
+        });
+
+        $(document).on('click', '#e_save_and_new, #e_save', function() {
+            let e_amount = $('#e_amount').val();
+            let e_Date = $('#e_Date').val();
+            let e_account = $('#e_account').val();
+            let e_remarks = $('#e_remarks').val();
+            let e_for = $(this).attr('data-id');
+            let role = $(this).attr('data-role');
+            $.post("{{ url('save-new-expense-record') }}", {
+                    e_amount: e_amount,
+                    e_Date: e_Date,
+                    e_account: e_account,
+                    e_remarks: e_remarks,
+                    e_for: e_for
+                },
+
+                function(res) {
+                    if (res === true) {
+                        if (role == 1) {
+                            $('#expenseEntry').modal('hide');
+                        }
+                        $('#newEntryForm')[0].reset();
+                        $('#e_save_and_new').attr('data-id', 0);
+                        $('#e_save').attr('data-id', 0);
+                        let currentDate = new Date();
+                        let formattedDate = currentDate.toISOString().split('T')[0];
+                        $('#e_Date').val(formattedDate);
+                    }
+                }).fail(function(err) {
                 console.log(err);
                 Swal.fire({
                     icon: 'error',

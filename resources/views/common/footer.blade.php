@@ -54,10 +54,10 @@
 <script src="{{ asset('public/assets/libs/sweetalert2/sweetalert2.min.js') }}"></script>
 
 <!-- Dashboard init -->
-<script src="{{ asset('public/assets/js/pages/dashboard-ecommerce.init.js') }}"></script>
+{{-- <script src="{{ asset('public/assets/js/pages/dashboard-ecommerce.init.js') }}"></script> --}}
 
 <!-- App js -->
-<script src="{{ asset('public/assets/js/app.js') }}"></script>
+{{-- <script src="{{ asset('public/assets/js/app.js') }}"></script> --}}
 
 <script>
     $(document).ready(function() {

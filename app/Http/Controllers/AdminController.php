@@ -3002,7 +3002,7 @@ class AdminController extends Controller
     public function viewExpenseRecords($id){
         if(Session::has('admin')){
             $records = ExpenseRecord::where('e_r_for','=',$id)->get();
-            return view('manage-expense-records',compact('records'));
+            return view('manage-expense-records',compact('records','id'));
         }else{
             return redirect('/');
         }
@@ -3016,6 +3016,63 @@ class AdminController extends Controller
                 return response()->json(true);
             }
             return response()->json(['message' => 'Something went wrong!'],400);
+        }
+    }
+
+    public function saveNewExpenseRecord(Request $request){
+        // return response()->json($request);
+        if(Session::has('admin')){
+            $request->validate([
+                'e_amount' => 'required|numeric',
+                'e_Date' => 'required|date',
+                'e_account' => 'required|numeric',
+                'e_remarks' => 'required|string'
+            ],[
+                'e_amount.required' => 'Amount can not left blank!',
+                'e_amount.numeric' => 'Invalid amount entered!',
+                'e_Date.required' => 'Please select a date!',
+                'e_Date.date' => 'Invalid date selected!',
+                'e_account.required' => 'Please select an account!',
+                'e_account.numeric' => 'Invalid account selected!',
+                'e_remarks.required' => 'Please write some remarks for this expense!',
+                'e_remarks.string' => 'Invalid remaks entered!',
+            ]);
+            $expense = Expense::find($request->e_for);
+            if(!$expense){
+                return response()->json(['message'=>'Please reload this page!'],400);
+            }
+            $account = Account::find($request->e_account);
+            if($account){
+                $account->ac_balance = (float)$account->ac_balance - (float)$request->e_account;
+                $account->save();
+            }else{
+                return response()->json(['message'=>'Selected account is not available on server!'],400);
+            }
+            
+            Transaction::create([
+                't_ac_id' => $account->ac_id,
+                't_type' => 2,
+                't_amount' => $request->e_amount,
+                't_final_amount' => $account->ac_balance,
+                't_remarks' => $expense->expense_name.', '.$request->e_remarks,
+                't_date' => $request->e_Date,
+            ]);
+            
+            $result = ExpenseRecord::create([
+                'e_r_remark' => $request->e_remarks,
+                'e_r_amount' => $request->e_amount,
+                'e_r_ac_from' => $request->e_account,
+                'e_r_for' => $request->e_for,
+                'e_r_status' => 1
+            ]);
+
+            if($result){
+                return response()->json(true);
+            }else{
+                return response()->json(['message'=>'Unable to save records right now!'],400);
+            }
+        }else{
+            return response()->json(['message'=>'Please login again!'],400);
         }
     }
 }
