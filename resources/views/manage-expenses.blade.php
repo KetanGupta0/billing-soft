@@ -1,5 +1,5 @@
 @include('common.header');
-<div class="modal fade zoomIn" id="deleteRecordModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade zoomIn" id="deleteRecordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -26,7 +26,7 @@
     </div>
 </div>
 
-<div id="addExpense" class="modal fade" tabindex="-1" role="dialog">
+<div id="addExpense" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -60,11 +60,11 @@
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
-<div id="expenseEntry" class="modal fade" tabindex="-1" role="dialog">
+<div id="expenseEntry" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Expense Entry</h4>
+                <h4 class="modal-title" id="expense_name_heading">Expense Entry</h4>
                 <button type="button" class="btn-close btn btn-danger rounded-circle" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
@@ -174,7 +174,7 @@
                             <div class="row">
                                 <div class="col-lg-4">
                                     <div>
-                                        <div class="btn btn-secondary btn-label rounded-pill expense_entry" data-id="${value.id}" data-bs-toggle="modal"
+                                        <div class="btn btn-secondary btn-label rounded-pill expense_entry" data-name="${value.expense_name}" data-id="${value.id}" data-bs-toggle="modal"
                                 data-bs-target="#expenseEntry">
                                             <i class="ri-quill-pen-line label-icon align-middle rounded-pill me-2"></i>Entry
                                         </div>
@@ -259,6 +259,7 @@
             let id = $(this).attr('data-id');
             $('#e_save_and_new').attr('data-id', id);
             $('#e_save').attr('data-id', id);
+            $('#expense_name_heading').html($(this).attr('data-name'));
         });
 
         $(document).on('click', '.expense_view', function() {

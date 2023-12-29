@@ -855,7 +855,8 @@
     -ms-flex-align: center;
     align-items: center;
     padding: .625rem 1.5rem;
-    color: var(--vz-vertical-menu-item-color);
+    color: #000000;
+    font-weight: 500;
     font-size: .9375rem;
     font-family: hkgrotesk, sans-serif
 }
