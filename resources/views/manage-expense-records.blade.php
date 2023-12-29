@@ -205,6 +205,50 @@
             }
         });
 
+        function getFreshList() {
+            $.post("{{ url('get-all-expense-record') }}", {
+                id: $('#expense_id').val()
+            }, function(res) {
+                $('#example').DataTable().destroy();
+                $('#expenseList').html(``);
+                $.each(res, function(key, value) {
+                    let formattedDate = new Date(value.created_at).toISOString().split('T')[0];
+                    $('#expenseList').append(`
+                        <tr>
+                            <td>${key+1}</td>
+                            <td>${formattedDate}</td>
+                            <td>${value.e_r_remark}</td>
+                            <td>${value.e_r_amount}</td>
+                            <td>${value.account}</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div>
+                                            <div class="btn btn-secondary btn-label rounded-pill expense_record_edit"
+                                                data-id="${value.id}" data-bs-toggle="modal"
+                                                data-bs-target="#expenseEntry">
+                                                <i class="ri-quill-pen-line label-icon align-middle rounded-pill me-2"></i>Edit
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div>
+                                            <div class="btn btn-danger btn-label rounded-pill expense_record_delete"
+                                                data-id="${value.id}" data-bs-toggle="modal"
+                                                data-bs-target="#deleteRecordModal">
+                                                <i class="ri-delete-bin-2-line label-icon align-middle rounded-pill me-2"></i>Delete
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `)
+                });
+                $('#example').DataTable()
+            }).fail();
+        }
+
         function getAccountList() {
             $.get("{{ url('fetch-account-list') }}", function(res) {
                 $('#e_account').html(`<option value="">Select</option>`);
@@ -222,6 +266,9 @@
             $('#newEntryForm')[0].reset();
             $('#expense_name_heading').html('Edit Entry');
             $('#e_save_and_new, #e_save').attr('data-type', 2);
+            $('#e_save_and_new, #e_save').attr('data-id', id);
+            $('#e_save_and_new').hide();
+            $('#e_save').html('Update');
             $.post("{{ url('fetch-expense-record-data') }}", {
                 id: id
             }, function(res) {
@@ -247,6 +294,12 @@
             $('#newEntryForm')[0].reset();
             $('#expense_name_heading').html('New Expense Entry');
             $('#e_save_and_new, #e_save').attr('data-type', 1);
+            $('#e_save').html('Save');
+            $('#e_save_and_new').show();
+            $('#e_save_and_new, #e_save').attr('data-id', 0);
+            let currentDate = new Date();
+            let formattedDate = currentDate.toISOString().split('T')[0];
+            $('#e_Date').val(formattedDate);
         });
 
         $(document).on('click', '#e_save_and_new, #e_save', function() {
@@ -274,6 +327,7 @@
                         let currentDate = new Date();
                         let formattedDate = currentDate.toISOString().split('T')[0];
                         $('#e_Date').val(formattedDate);
+                        getFreshList();
                     }
                 }).fail(function(err) {
                     console.log(err);
@@ -284,17 +338,20 @@
                     });
                 });
             } else if ($(this).attr('data-type') == 2) {
+                const e_id = $(this).attr('data-id');
                 $.post("{{ url('update-new-expense-record') }}", {
                     e_amount: e_amount,
                     e_Date: e_Date,
                     e_account: e_account,
                     e_remarks: e_remarks,
-                    e_for: e_for
+                    e_for: e_for,
+                    e_id: e_id
                 }, function(res) {
                     if (res === true) {
                         if (role == 1) {
                             $('#expenseEntry').modal('hide');
                         }
+                        getFreshList();
                         $('#newEntryForm')[0].reset();
                         $('#e_save_and_new').attr('data-id', 0);
                         $('#e_save').attr('data-id', 0);

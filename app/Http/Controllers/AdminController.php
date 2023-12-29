@@ -3024,7 +3024,6 @@ class AdminController extends Controller
     }
 
     public function saveNewExpenseRecord(Request $request){
-        // return response()->json($request);
         if(Session::has('admin')){
             $request->validate([
                 'e_amount' => 'required|numeric',
@@ -3052,7 +3051,6 @@ class AdminController extends Controller
             }else{
                 return response()->json(['message'=>'Selected account is not available on server!'],400);
             }
-            
             $tnx = Transaction::create([
                 't_ac_id' => $account->ac_id,
                 't_type' => 2,
@@ -3061,7 +3059,6 @@ class AdminController extends Controller
                 't_remarks' => $expense->expense_name.', '.$request->e_remarks,
                 't_date' => $request->e_Date,
             ]);
-            
             $result = ExpenseRecord::create([
                 'e_r_remark' => $request->e_remarks,
                 'e_r_amount' => $request->e_amount,
@@ -3070,7 +3067,6 @@ class AdminController extends Controller
                 'e_r_status' => 1,
                 'e_r_tnx_id' => $tnx->t_id
             ]);
-
             if($result){
                 return response()->json(true);
             }else{
@@ -3080,9 +3076,8 @@ class AdminController extends Controller
             return response()->json(['message'=>'Please login again!'],400);
         }
     }
-    
+
     public function updateExpenseRecord(Request $request){
-        // return response()->json($request);
         if(Session::has('admin')){
             $request->validate([
                 'e_amount' => 'required|numeric',
@@ -3103,36 +3098,52 @@ class AdminController extends Controller
             if(!$expense){
                 return response()->json(['message'=>'Please reload this page!'],400);
             }
-            $account = Account::find($request->e_account);
-            if($account){
-                $account->ac_balance = (float)$account->ac_balance - (float)$request->e_amount;
-                $account->save();
-            }else{
-                return response()->json(['message'=>'Selected account is not available on server!'],400);
-            }
-            
-            $tnx = Transaction::create([
-                't_ac_id' => $account->ac_id,
-                't_type' => 2,
-                't_amount' => $request->e_amount,
-                't_final_amount' => $account->ac_balance,
-                't_remarks' => $expense->expense_name.', '.$request->e_remarks,
-                't_date' => $request->e_Date,
-            ]);
-            
-            $result = ExpenseRecord::create([
-                'e_r_remark' => $request->e_remarks,
-                'e_r_amount' => $request->e_amount,
-                'e_r_ac_from' => $request->e_account,
-                'e_r_for' => $request->e_for,
-                'e_r_status' => 1,
-                'e_r_tnx_id' => $tnx->t_id
-            ]);
+            $record = ExpenseRecord::find($request->e_id);
+            if($record){
+                $account = Account::find($request->e_account);
+                if($account){
+                    $tnx = Transaction::find($record->e_r_tnx_id);
+                    if($tnx){
+                        if($record->e_r_ac_from == $request->e_account){
+                            $account->ac_balance = ((float)$account->ac_balance + (float)$record->e_r_amount) - (float)$request->e_amount;
+                            $account->save();
+                        }else{
+                            $oldac = Account::find($tnx->t_ac_id);
+                            if($oldac){
+                                $oldac->ac_balance = ((float)$oldac->ac_balance + (float)$record->e_r_amount);
+                                $oldac->save();
+                            }
+                            $account->ac_balance = (float)$account->ac_balance - (float)$request->e_amount;
+                            $account->save();
+                        }
+                        $tnx->t_ac_id = $account->ac_id;
+                        $tnx->t_amount = $request->e_amount;
+                        $tnx->t_final_amount = $account->ac_balance;
+                        $tnx->t_remarks = $expense->expense_name.', '.$request->e_remarks;
+                        $tnx->save();
 
-            if($result){
-                return response()->json(true);
+                        $result = $record->update([
+                            'e_r_remark' => $request->e_remarks,
+                            'e_r_amount' => $request->e_amount,
+                            'e_r_ac_from' => $request->e_account,
+                            'e_r_for' => $request->e_for,
+                            'e_r_status' => 1,
+                            'e_r_tnx_id' => $tnx->t_id
+                        ]);
+
+                        if($result){
+                            return response()->json(true);
+                        }else{
+                            return response()->json(['message'=>'Unable to save records right now!'],400);
+                        }
+                    }else{
+                        return response()->json(['message'=>'Transaction is not available on server!'],400);
+                    }
+                }else{
+                    return response()->json(['message'=>'Selected account is not available on server!'],400);
+                }
             }else{
-                return response()->json(['message'=>'Unable to save records right now!'],400);
+                return response()->json(['message'=>'Reload is required!'],400);
             }
         }else{
             return response()->json(['message'=>'Please login again!'],400);
@@ -3147,6 +3158,19 @@ class AdminController extends Controller
             }
         }else{
             return response()->json(['message'=>'Please reload this page!'],400);
+        }
+    }
+
+    public function fetchAllExpensesAJAX(Request $request){
+        if(Session::has('admin')){
+            $records = ExpenseRecord::where('e_r_for','=',$request->id)->get();
+            foreach($records as $r){
+                $ac = Account::find($r->e_r_ac_from);
+                $r->account = $ac ? $ac->ac_name : null;
+            }
+            return response()->json($records);
+        }else{
+            return response()->json(['message'=>'Reload is required!'],400);
         }
     }
 }

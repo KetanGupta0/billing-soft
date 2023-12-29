@@ -113,3 +113,4 @@ Route::post('/delete-expence',[AdminController::class,'deleteExpenseAJAX']);
 Route::post('/save-new-expense-record',[AdminController::class,'saveNewExpenseRecord']);
 Route::post('/update-new-expense-record',[AdminController::class,'updateExpenseRecord']);
 Route::post('/fetch-expense-record-data',[AdminController::class,'getExpenseRecordDataAJAX']);
+Route::post('/get-all-expense-record',[AdminController::class,'fetchAllExpensesAJAX']);
