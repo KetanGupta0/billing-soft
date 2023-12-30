@@ -9,5 +9,5 @@ class Expense extends Model
 {
     use HasFactory;
     protected $table = 'expenses';
-    protected $fillable = ['expense_name'];
+    protected $fillable = ['expense_name','depressible_type','depressible_percent'];
 }

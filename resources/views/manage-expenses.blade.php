@@ -1,5 +1,6 @@
 @include('common.header');
-<div class="modal fade zoomIn" id="deleteRecordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+<div class="modal fade zoomIn" id="deleteRecordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -26,7 +27,8 @@
     </div>
 </div>
 
-<div id="addExpense" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+<div id="addExpense" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -45,6 +47,25 @@
                                     <label for="expense_name">Expense Name<span class="text-danger">*</span></label>
                                 </div>
                             </div>
+                            <div class="col-lg-6">
+                                <div class="form-floating">
+                                    <select class="form-select" name="depressible_type" id="depressible_type"
+                                        aria-label="Floating label select example">
+                                        <option selected>Select</option>
+                                        <option value="1">Yes</option>
+                                        <option value="2">No</option>
+                                    </select>
+                                    <label for="depressible-type">Depressible type</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 d-type" style="display: none">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" name="depressible_rate"
+                                        id="depressible_rate" placeholder="">
+                                    <label for="depressible_rate">Depressible % Per Year<span
+                                            class="text-danger">*</span></label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-lg-12 mt-2">
@@ -60,7 +81,8 @@
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
-<div id="expenseEntry" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+<div id="expenseEntry" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -235,8 +257,12 @@
 
         $(document).on('click', '#save, #save_and_new', function() {
             const name = $('#expense_name').val();
+            const depressible_type = $('#depressible_type').val();
+            const depressible_rate = $('#depressible_rate').val();
             $.post("{{ url('save-expense') }}", {
-                name: name
+                name: name,
+                depressible_type: depressible_type,
+                depressible_rate: depressible_rate
             }, function(res) {
                 updateList(res);
             }).fail(function(err) {
@@ -326,6 +352,15 @@
                     text: err.responseJSON.message
                 });
             });
+        });
+
+        $(document).on('change', '#depressible-type', function() {
+            let value = $(this).val();
+            if (value == 1) {
+                $('.d-type').show();
+            } else if (value == 2 || value === '') {
+                $('.d-type').hide();
+            }
         });
     });
 </script>

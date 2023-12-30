@@ -3007,7 +3007,9 @@ class AdminController extends Controller
                 return response()->json(['message', 'Expense already exists!'], 400);
             } else {
                 $result = Expense::create([
-                    'expense_name' => $request->name
+                    'expense_name' => $request->name,
+                    'depressible_type' => $request->depressible_type,
+                    'depressible_percent' => $request->depressible_rate,
                 ]);
                 if ($result) {
                     return response()->json(Expense::all());
