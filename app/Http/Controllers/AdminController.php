@@ -2460,10 +2460,6 @@ class AdminController extends Controller
     public function viewAccount($id)
     {
         if (Session::has('admin')) {
-            // $transactionsQuery = Transaction::where('t_ac_id', '=', $id)
-            //     ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
-            // $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $id)
-            //     ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_type as t_type', 'tnx_user_name', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at', 'tnx_p_amount', 'tnx_user_type');
             $transactionsQuery = Transaction::where('t_ac_id', '=', $id)
                 ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
             $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $id)
@@ -2481,7 +2477,6 @@ class AdminController extends Controller
             echo view('login');
         }
     }
-
 
     public function deleteTransactionAJAX(Request $req)
     {
@@ -2692,23 +2687,35 @@ class AdminController extends Controller
 
     public function stockAlertAJAX()
     {
-        $items = ItemsModel::where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
-            ->orWhere('item_min_stock', '=', DB::raw('items.item_stock_whole'))->orWhere('item_exp_date', '<=', date('Y-m-d'))
-            ->count();
-        return response()->json($items);
+        if (Session::has('admin')) {
+            $items = ItemsModel::where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
+                ->orWhere('item_min_stock', '=', DB::raw('items.item_stock_whole'))->orWhere('item_exp_date', '<=', date('Y-m-d'))
+                ->count();
+            return response()->json($items);
+        } else {
+            return response()->json(['message' => 'Please login again'], 400);
+        }
     }
 
     public function stockAlertPageAJAX()
     {
-        return view('alert_page');
+        if (Session::has('admin')) {
+            return view('alert_page');
+        } else {
+            return redirect('/');
+        }
     }
 
     public function fetchAlertItemsAJAX()
     {
-        $items = ItemsModel::where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
-            ->orWhere('item_min_stock', '=', DB::raw('items.item_stock_whole'))->orWhere('item_exp_date', '<=', date('Y-m-d'))
-            ->get();
-        return response()->json($items);
+        if (Session::has('admin')) {
+            $items = ItemsModel::where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
+                ->orWhere('item_min_stock', '=', DB::raw('items.item_stock_whole'))->orWhere('item_exp_date', '<=', date('Y-m-d'))
+                ->get();
+            return response()->json($items);
+        } else {
+            return response()->json(['message' => 'Please login again'], 400);
+        }
     }
 
     public function filterAccountStatementsAJAX(Request $req)
@@ -2775,55 +2782,63 @@ class AdminController extends Controller
 
     public function filterAccountListAJAX(Request $request)
     {
-        $ac_id = $request->input('ac_id');
-        $from_date = $request->input('from_date');
-        $to_date = $request->input('to_date');
+        if (Session::has('admin')) {
+            $ac_id = $request->input('ac_id');
+            $from_date = $request->input('from_date');
+            $to_date = $request->input('to_date');
 
-        // Convert to Carbon instances
-        $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
-        $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
+            // Convert to Carbon instances
+            $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
+            $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
 
-        $transactionsQuery = Transaction::where('t_ac_id', '=', $request->ac_id)
-            ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
-        $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $request->ac_id)
-            ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
-        if ($from_date) {
-            $transactionsQuery->whereDate('t_date', '>=', $from_date);
-            $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
+            $transactionsQuery = Transaction::where('t_ac_id', '=', $request->ac_id)
+                ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
+            $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $request->ac_id)
+                ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
+            if ($from_date) {
+                $transactionsQuery->whereDate('t_date', '>=', $from_date);
+                $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
+            }
+            if ($to_date) {
+                $transactionsQuery->whereDate('t_date', '<=', $to_date);
+                $userTransactionsQuery->whereDate('tnx_date', '<=', $to_date);
+            }
+            $transactions = $transactionsQuery->get();
+            $userTransactions = $userTransactionsQuery->get();
+            $account = Account::find($request->ac_id);
+            $mergedTransactions = $transactions->concat($userTransactions);
+            $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
+                return $transaction['created_at'] ?? $transaction['created_at'];
+            });
+            return response()->json($mergedTransactions);
+        } else {
+            return response()->json(['message' => 'Please login again'], 400);
         }
-        if ($to_date) {
-            $transactionsQuery->whereDate('t_date', '<=', $to_date);
-            $userTransactionsQuery->whereDate('tnx_date', '<=', $to_date);
-        }
-        $transactions = $transactionsQuery->get();
-        $userTransactions = $userTransactionsQuery->get();
-        $account = Account::find($request->ac_id);
-        $mergedTransactions = $transactions->concat($userTransactions);
-        $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
-            return $transaction['created_at'] ?? $transaction['created_at'];
-        });
-        return response()->json($mergedTransactions);
     }
 
     public function filterUserTransactionListAJAX(Request $request)
     {
-        $from_date = $request->input('from_date');
-        $to_date = $request->input('to_date');
-        $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
-        $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
-        $userTransactionsQuery = UserTransaction::where('tnx_user_id', '=', $request->p_id)
-            ->where('tnx_user_type', '=', $request->user_type);
-        if ($from_date) {
-            $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
+        if (Session::has('admin')) {
+            $from_date = $request->input('from_date');
+            $to_date = $request->input('to_date');
+            $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
+            $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
+            $userTransactionsQuery = UserTransaction::where('tnx_user_id', '=', $request->p_id)
+                ->where('tnx_user_type', '=', $request->user_type);
+            if ($from_date) {
+                $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
+            }
+            if ($to_date) {
+                $userTransactionsQuery->whereDate('tnx_date', '<=', $to_date);
+            }
+            $userTransactions = $userTransactionsQuery->get();
+            $userTransactions = $userTransactions->sortBy(function ($transaction) {
+                return $transaction['created_at'] ?? $transaction['created_at'];
+            });
+            return response()->json($userTransactions);
+        } else {
+            return response()->json(['message' => 'Please login again'], 400);
         }
-        if ($to_date) {
-            $userTransactionsQuery->whereDate('tnx_date', '<=', $to_date);
-        }
-        $userTransactions = $userTransactionsQuery->get();
-        $userTransactions = $userTransactions->sortBy(function ($transaction) {
-            return $transaction['created_at'] ?? $transaction['created_at'];
-        });
-        return response()->json($userTransactions);
     }
 
     public function generateUserStatementWPLinkAJAX(Request $request)
@@ -2853,6 +2868,7 @@ class AdminController extends Controller
 
             return response()->json(['transactions' => $userTransactions, 'from_date' => $from_date, 'to_date' => $to_date, 'user' => $user, 'status' => true]);
         } else {
+            return response()->json(['message' => 'Please login again'], 400);
         }
     }
 
@@ -2908,7 +2924,7 @@ class AdminController extends Controller
                             if ($product->item_gst == 1) {
                                 $item['gst'] = $product->item_gst_slab;
                                 $temp['item'][] = $item->toArray();
-                            }else{
+                            } else {
                                 continue;
                             }
                         }
@@ -2928,7 +2944,7 @@ class AdminController extends Controller
                             if ($product->item_gst == 1) {
                                 $item['gst'] = $product->item_gst_slab;
                                 $temp['item'][] = $item->toArray();
-                            }else{
+                            } else {
                                 continue;
                             }
                         }
@@ -2942,7 +2958,7 @@ class AdminController extends Controller
                 }
             }
             if ($request->type == 1) {
-                return view('gst',compact('data','for'));
+                return view('gst', compact('data', 'for'));
             } elseif ($request->type == 2) {
                 return response()->json($data);
             } else {
@@ -2959,78 +2975,84 @@ class AdminController extends Controller
         }
     }
 
-    public function manageExpensesView(){
-        if(Session::has('admin')){
+    public function manageExpensesView()
+    {
+        if (Session::has('admin')) {
             return view('manage-expenses');
-        }else{
+        } else {
             return redirect('/');
         }
     }
 
-    public function loadExpenseListAJAX(){
-        if(Session::has('admin')){
+    public function loadExpenseListAJAX()
+    {
+        if (Session::has('admin')) {
             return response()->json(Expense::all());
-        }else{
-            return response()->json(['message','Login is required!'],400);
+        } else {
+            return response()->json(['message', 'Login is required!'], 400);
         }
     }
 
-    public function makeExpenseAJAX(Request $request){
-        if(Session::has('admin')){
+    public function makeExpenseAJAX(Request $request)
+    {
+        if (Session::has('admin')) {
             $request->validate([
                 'name' => 'required|string'
-            ],[
+            ], [
                 'name.required' => 'Expense name is required!',
                 'name.string' => 'Invalid expense name!'
             ]);
-            $check = Expense::where('expense_name','=',$request->name)->first();
-            if($check){
-                return response()->json(['message','Expense already exists!'],400);
-            }else{
+            $check = Expense::where('expense_name', '=', $request->name)->first();
+            if ($check) {
+                return response()->json(['message', 'Expense already exists!'], 400);
+            } else {
                 $result = Expense::create([
                     'expense_name' => $request->name
                 ]);
-                if($result){
+                if ($result) {
                     return response()->json(Expense::all());
-                }else{
-                    return response()->json(['message' => 'Something went wrong!'],400);
+                } else {
+                    return response()->json(['message' => 'Something went wrong!'], 400);
                 }
             }
         }
     }
 
-    public function viewExpenseRecords($id){
-        if(Session::has('admin')){
-            $records = ExpenseRecord::where('e_r_for','=',$id)->get();
-            foreach($records as $r){
+    public function viewExpenseRecords($id)
+    {
+        if (Session::has('admin')) {
+            $records = ExpenseRecord::where('e_r_for', '=', $id)->orderBy('e_r_date', 'ASC')->get();
+            foreach ($records as $r) {
                 $ac = Account::find($r->e_r_ac_from);
                 $r->account = $ac ? $ac->ac_name : null;
             }
-            return view('manage-expense-records',compact('records','id'));
-        }else{
+            return view('manage-expense-records', compact('records', 'id'));
+        } else {
             return redirect('/');
         }
     }
 
-    public function deleteExpenseAJAX(Request $request){
-        if(Session::has('admin')){
+    public function deleteExpenseAJAX(Request $request)
+    {
+        if (Session::has('admin')) {
             $data = Expense::find($request->id);
-            if($data){
+            if ($data) {
                 $data->delete();
                 return response()->json(true);
             }
-            return response()->json(['message' => 'Something went wrong!'],400);
+            return response()->json(['message' => 'Something went wrong!'], 400);
         }
     }
 
-    public function saveNewExpenseRecord(Request $request){
-        if(Session::has('admin')){
+    public function saveNewExpenseRecord(Request $request)
+    {
+        if (Session::has('admin')) {
             $request->validate([
                 'e_amount' => 'required|numeric',
                 'e_Date' => 'required|date',
                 'e_account' => 'required|numeric',
                 'e_remarks' => 'required|string'
-            ],[
+            ], [
                 'e_amount.required' => 'Amount can not left blank!',
                 'e_amount.numeric' => 'Invalid amount entered!',
                 'e_Date.required' => 'Please select a date!',
@@ -3041,22 +3063,22 @@ class AdminController extends Controller
                 'e_remarks.string' => 'Invalid remaks entered!',
             ]);
             $expense = Expense::find($request->e_for);
-            if(!$expense){
-                return response()->json(['message'=>'Please reload this page!'],400);
+            if (!$expense) {
+                return response()->json(['message' => 'Please reload this page!'], 400);
             }
             $account = Account::find($request->e_account);
-            if($account){
+            if ($account) {
                 $account->ac_balance = (float)$account->ac_balance - (float)$request->e_amount;
                 $account->save();
-            }else{
-                return response()->json(['message'=>'Selected account is not available on server!'],400);
+            } else {
+                return response()->json(['message' => 'Selected account is not available on server!'], 400);
             }
             $tnx = Transaction::create([
                 't_ac_id' => $account->ac_id,
                 't_type' => 2,
                 't_amount' => $request->e_amount,
                 't_final_amount' => $account->ac_balance,
-                't_remarks' => $expense->expense_name.', '.$request->e_remarks,
+                't_remarks' => $expense->expense_name . ', ' . $request->e_remarks,
                 't_date' => $request->e_Date,
             ]);
             $result = ExpenseRecord::create([
@@ -3065,26 +3087,28 @@ class AdminController extends Controller
                 'e_r_ac_from' => $request->e_account,
                 'e_r_for' => $request->e_for,
                 'e_r_status' => 1,
-                'e_r_tnx_id' => $tnx->t_id
+                'e_r_tnx_id' => $tnx->t_id,
+                'e_r_date' => $request->e_Date
             ]);
-            if($result){
+            if ($result) {
                 return response()->json(true);
-            }else{
-                return response()->json(['message'=>'Unable to save records right now!'],400);
+            } else {
+                return response()->json(['message' => 'Unable to save records right now!'], 400);
             }
-        }else{
-            return response()->json(['message'=>'Please login again!'],400);
+        } else {
+            return response()->json(['message' => 'Please login again!'], 400);
         }
     }
 
-    public function updateExpenseRecord(Request $request){
-        if(Session::has('admin')){
+    public function updateExpenseRecord(Request $request)
+    {
+        if (Session::has('admin')) {
             $request->validate([
                 'e_amount' => 'required|numeric',
                 'e_Date' => 'required|date',
                 'e_account' => 'required|numeric',
                 'e_remarks' => 'required|string'
-            ],[
+            ], [
                 'e_amount.required' => 'Amount can not left blank!',
                 'e_amount.numeric' => 'Invalid amount entered!',
                 'e_Date.required' => 'Please select a date!',
@@ -3095,21 +3119,21 @@ class AdminController extends Controller
                 'e_remarks.string' => 'Invalid remaks entered!',
             ]);
             $expense = Expense::find($request->e_for);
-            if(!$expense){
-                return response()->json(['message'=>'Please reload this page!'],400);
+            if (!$expense) {
+                return response()->json(['message' => 'Please reload this page!'], 400);
             }
             $record = ExpenseRecord::find($request->e_id);
-            if($record){
+            if ($record) {
                 $account = Account::find($request->e_account);
-                if($account){
+                if ($account) {
                     $tnx = Transaction::find($record->e_r_tnx_id);
-                    if($tnx){
-                        if($record->e_r_ac_from == $request->e_account){
+                    if ($tnx) {
+                        if ($record->e_r_ac_from == $request->e_account) {
                             $account->ac_balance = ((float)$account->ac_balance + (float)$record->e_r_amount) - (float)$request->e_amount;
                             $account->save();
-                        }else{
+                        } else {
                             $oldac = Account::find($tnx->t_ac_id);
-                            if($oldac){
+                            if ($oldac) {
                                 $oldac->ac_balance = ((float)$oldac->ac_balance + (float)$record->e_r_amount);
                                 $oldac->save();
                             }
@@ -3119,7 +3143,7 @@ class AdminController extends Controller
                         $tnx->t_ac_id = $account->ac_id;
                         $tnx->t_amount = $request->e_amount;
                         $tnx->t_final_amount = $account->ac_balance;
-                        $tnx->t_remarks = $expense->expense_name.', '.$request->e_remarks;
+                        $tnx->t_remarks = $expense->expense_name . ', ' . $request->e_remarks;
                         $tnx->save();
 
                         $result = $record->update([
@@ -3131,46 +3155,107 @@ class AdminController extends Controller
                             'e_r_tnx_id' => $tnx->t_id
                         ]);
 
-                        if($result){
+                        if ($result) {
                             return response()->json(true);
-                        }else{
-                            return response()->json(['message'=>'Unable to save records right now!'],400);
+                        } else {
+                            return response()->json(['message' => 'Unable to save records right now!'], 400);
                         }
-                    }else{
-                        return response()->json(['message'=>'Transaction is not available on server!'],400);
+                    } else {
+                        return response()->json(['message' => 'Transaction is not available on server!'], 400);
                     }
-                }else{
-                    return response()->json(['message'=>'Selected account is not available on server!'],400);
+                } else {
+                    return response()->json(['message' => 'Selected account is not available on server!'], 400);
                 }
-            }else{
-                return response()->json(['message'=>'Reload is required!'],400);
+            } else {
+                return response()->json(['message' => 'Reload is required!'], 400);
+            }
+        } else {
+            return response()->json(['message' => 'Please login again!'], 400);
+        }
+    }
+
+    public function getExpenseRecordDataAJAX(Request $request)
+    {
+        if (Session::has('admin')) {
+            $record = ExpenseRecord::find($request->id);
+            if ($record) {
+                return response()->json(['status' => true, 'data' => $record]);
+            }
+        } else {
+            return response()->json(['message' => 'Please reload this page!'], 400);
+        }
+    }
+
+    public function fetchAllExpensesAJAX(Request $request)
+    {
+        if (Session::has('admin')) {
+            $records = ExpenseRecord::where('e_r_for', '=', $request->id)->orderBy('e_r_date', 'ASC')->get();
+            foreach ($records as $r) {
+                $ac = Account::find($r->e_r_ac_from);
+                $r->account = $ac ? $ac->ac_name : null;
+            }
+            return response()->json($records);
+        } else {
+            return response()->json(['message' => 'Reload is required!'], 400);
+        }
+    }
+
+    public function filterExpenseRecordAJAX(Request $request){
+        if(Session::has('admin')){
+            $from_date = $request->input('from_date');
+            $to_date = $request->input('to_date');
+            $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
+            $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
+
+            $eRecord = ExpenseRecord::where('e_r_for','=',$request->expense_id);
+            if($from_date != null){
+                $eRecord->where('e_r_date','>=',$from_date);
+            }
+            if($to_date != null){
+                $eRecord->where('e_r_date','<=',$to_date);
+            }
+            $result = $eRecord->orderBy('e_r_date','ASC')->get();
+            foreach ($result as $r) {
+                $ac = Account::find($r->e_r_ac_from);
+                $r->account = $ac ? $ac->ac_name : null;
+            }
+            if($result){
+                return response()->json($result);
             }
         }else{
             return response()->json(['message'=>'Please login again!'],400);
         }
     }
 
-    public function getExpenseRecordDataAJAX(Request $request){
+    public function printExpenseStatement(Request $request){
+        // return response()->json($request);
         if(Session::has('admin')){
-            $record = ExpenseRecord::find($request->id);
-            if($record){
-                return response()->json(['status'=>true,'data'=>$record]);
+            $from_date = $request->input('from_date');
+            $to_date = $request->input('to_date');
+            $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
+            $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
+            $expense = Expense::find($request->expense_id);
+            if($expense){
+                $eRecord = ExpenseRecord::where('e_r_for','=',$request->expense_id);
+                if($from_date != null){
+                    $eRecord->where('e_r_date','>=',$from_date);
+                }
+                if($to_date != null){
+                    $eRecord->where('e_r_date','<=',$to_date);
+                }
+                $result = $eRecord->orderBy('e_r_date','ASC')->get();
+                foreach ($result as $r) {
+                    $ac = Account::find($r->e_r_ac_from);
+                    $r->account = $ac ? $ac->ac_name : null;
+                }
+                if($result){
+                    return view('expense-statement',compact('result','expense'));
+                }
+            }else{
+                return redirect()->back()->with(['error'=>'Requested expense is no longer on the server!']);
             }
         }else{
-            return response()->json(['message'=>'Please reload this page!'],400);
-        }
-    }
-
-    public function fetchAllExpensesAJAX(Request $request){
-        if(Session::has('admin')){
-            $records = ExpenseRecord::where('e_r_for','=',$request->id)->get();
-            foreach($records as $r){
-                $ac = Account::find($r->e_r_ac_from);
-                $r->account = $ac ? $ac->ac_name : null;
-            }
-            return response()->json($records);
-        }else{
-            return response()->json(['message'=>'Reload is required!'],400);
+            return redirect('/');
         }
     }
 }

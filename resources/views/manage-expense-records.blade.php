@@ -119,20 +119,72 @@
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
-
 <div class="main-content">
-    <input type="hidden" name="expense_id" id="expense_id" value="{{ $id }}">
     <div class="page-content">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
+                        {{-- @if (session('error'))
+                            <div class="alert alert-danger">
+                                {{ session('error') }}
+                            </div>
+                        @endif --}}
                         <div class="card-header">
-                            <button type="button" id="newExpenseEntry" class="btn btn-info btn-label rounded-pill"
-                                data-bs-toggle="modal" data-bs-target="#expenseEntry"><i
-                                    class="ri-add-circle-line label-icon align-middle rounded-pill me-2"></i>
-                                New Expense Entry
-                            </button>
+                            <form action="{{ url('print-expense-statement') }}" method="post" id="filter-form">
+                                @csrf
+                                <div class="row border-bottom p-3 d-flex align-items-center">
+                                    <div class="col-lg-7">
+                                        <button type="button" id="newExpenseEntry"
+                                            class="btn btn-info btn-label rounded-pill" data-bs-toggle="modal"
+                                            data-bs-target="#expenseEntry"><i
+                                                class="ri-add-circle-line label-icon align-middle rounded-pill me-2"></i>
+                                            New Expense Entry
+                                        </button>
+                                    </div>
+                                    <div class="col-lg-5">
+                                        <div class="row d-flex align-items-center">
+                                            <div class="col-lg-4">
+                                                <div class="form-floating">
+                                                    <input type="hidden" name="expense_id" id="expense_id"
+                                                        value="{{ $id }}">
+                                                    <input type="date" class="form-control" id="from_date"
+                                                        placeholder="From Date" name="from_date"
+                                                        onfocus="this.showPicker()">
+                                                    <label for="from_date">From Date</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-floating">
+                                                    <input type="date" class="form-control" id="to_date"
+                                                        placeholder="To Date" name="to_date"
+                                                        onfocus="this.showPicker()">
+                                                    <label for="to_date">To Date</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <div>
+                                                    <div class="btn btn-secondary btn-label rounded-pill"
+                                                        id="clear_filter">
+                                                        <i
+                                                            class="ri-format-clear label-icon align-middle rounded-pill me-2"></i>Clear
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <div>
+                                                    <button type="submit"
+                                                        class="btn btn-success btn-label rounded-pill"
+                                                        id="statement_print">
+                                                        <i
+                                                            class="ri-printer-fill label-icon align-middle rounded-pill me-2"></i>Print
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                         <div class="card-body">
                             <table id="example"
@@ -153,7 +205,7 @@
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
                                             @php
-                                                $dateTime = new DateTime($r->created_at);
+                                                $dateTime = new DateTime($r->e_r_date);
                                                 $formattedDate = $dateTime->format('d-m-Y');
                                             @endphp
                                             <td>{{ $formattedDate }}</td>
@@ -197,6 +249,16 @@
     </div>
 </div>
 @include('common.footer');
+@if (session('error'))
+    <script>
+        // Display SweetAlert2 modal with the error message
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: '{{ session('error') }}',
+        });
+    </script>
+@endif
 <script>
     $(document).ready(function() {
         $.ajaxSetup({
@@ -205,15 +267,18 @@
             }
         });
 
-        function getFreshList() {
-            $.post("{{ url('get-all-expense-record') }}", {
-                id: $('#expense_id').val()
-            }, function(res) {
-                $('#example').DataTable().destroy();
-                $('#expenseList').html(``);
-                $.each(res, function(key, value) {
-                    let formattedDate = new Date(value.created_at).toISOString().split('T')[0];
-                    $('#expenseList').append(`
+        function listFormation(res) {
+            $('#example').DataTable().destroy();
+            $('#expenseList').html(``);
+            $.each(res, function(key, value) {
+                const originalDate = new Date(value.e_r_date);
+                const day = String(originalDate.getDate()).padStart(2, '0');
+                const month = String(originalDate.getMonth() + 1).padStart(2,
+                    '0'); // Month is zero-based
+                const year = originalDate.getFullYear();
+
+                const formattedDate = `${day}-${month}-${year}`;
+                $('#expenseList').append(`
                         <tr>
                             <td>${key+1}</td>
                             <td>${formattedDate}</td>
@@ -244,8 +309,15 @@
                             </td>
                         </tr>
                     `)
-                });
-                $('#example').DataTable()
+            });
+            $('#example').DataTable();
+        }
+
+        function getFreshList() {
+            $.post("{{ url('get-all-expense-record') }}", {
+                id: $('#expense_id').val()
+            }, function(res) {
+                listFormation(res);
             }).fail();
         }
 
@@ -368,6 +440,28 @@
                     });
                 });
             }
+        });
+
+        function filterList() {
+            let from_date = $('#from_date').val();
+            let to_date = $('#to_date').val();
+            let expense_id = $('#expense_id').val();
+            $.post("{{ url('filter-expense-record') }}", {
+                from_date: from_date,
+                to_date: to_date,
+                expense_id: expense_id
+            }, function(res) {
+                listFormation(res);
+            }).fail();
+        }
+
+        $(document).on('click', '#clear_filter', function() {
+            $('#filter-form')[0].reset();
+            filterList();
+        });
+
+        $(document).on('input', '#from_date, #to_date', function() {
+            filterList();
         });
     });
 </script>
