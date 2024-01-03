@@ -3023,12 +3023,18 @@ class AdminController extends Controller
     public function viewExpenseRecords($id)
     {
         if (Session::has('admin')) {
-            $records = ExpenseRecord::where('e_r_for', '=', $id)->orderBy('e_r_date', 'ASC')->get();
-            foreach ($records as $r) {
-                $ac = Account::find($r->e_r_ac_from);
-                $r->account = $ac ? $ac->ac_name : null;
+            $expense = Expense::find($id);
+            if($expense){
+                $records = ExpenseRecord::where('e_r_for', '=', $id)->orderBy('e_r_date', 'ASC')->get();
+                foreach ($records as $r) {
+                    $ac = Account::find($r->e_r_ac_from);
+                    $r->account = $ac ? $ac->ac_name : null;
+                }
+                $accounts = Account::get();
+                return view('manage-expense-records', compact('expense', 'accounts', 'records', 'id'));
+            }else{
+                return redirect()->back()->with('error','Requested expense type is not available on the server!');
             }
-            return view('manage-expense-records', compact('records', 'id'));
         } else {
             return redirect('/');
         }
@@ -3069,8 +3075,12 @@ class AdminController extends Controller
                 return response()->json(['message' => 'Please reload this page!'], 400);
             }
             $account = Account::find($request->e_account);
+            $amt = (float)$request->e_amount;
+            // if($expense->depressible_type == 1){
+            //     $amt = (float)$request->e_amount - ((float)$request->e_amount * (float)$expense->depressible_percent / 100);
+            // }
             if ($account) {
-                $account->ac_balance = (float)$account->ac_balance - (float)$request->e_amount;
+                $account->ac_balance = (float)$account->ac_balance - $amt;
                 $account->save();
             } else {
                 return response()->json(['message' => 'Selected account is not available on server!'], 400);
@@ -3078,14 +3088,14 @@ class AdminController extends Controller
             $tnx = Transaction::create([
                 't_ac_id' => $account->ac_id,
                 't_type' => 2,
-                't_amount' => $request->e_amount,
+                't_amount' => $amt,
                 't_final_amount' => $account->ac_balance,
                 't_remarks' => $expense->expense_name . ', ' . $request->e_remarks,
                 't_date' => $request->e_Date,
             ]);
             $result = ExpenseRecord::create([
                 'e_r_remark' => $request->e_remarks,
-                'e_r_amount' => $request->e_amount,
+                'e_r_amount' => $amt,
                 'e_r_ac_from' => $request->e_account,
                 'e_r_for' => $request->e_for,
                 'e_r_status' => 1,
@@ -3259,5 +3269,9 @@ class AdminController extends Controller
         }else{
             return redirect('/');
         }
+    }
+
+    public function saveDepressedSaleRecordAJAX(Request $request){
+        return response()->json($request);
     }
 }

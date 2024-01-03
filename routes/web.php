@@ -116,3 +116,4 @@ Route::post('/fetch-expense-record-data',[AdminController::class,'getExpenseReco
 Route::post('/get-all-expense-record',[AdminController::class,'fetchAllExpensesAJAX']);
 Route::post('/filter-expense-record',[AdminController::class,'filterExpenseRecordAJAX']);
 Route::post('/print-expense-statement',[AdminController::class,'printExpenseStatement']);
+Route::post('/save-depressed-sale-record',[AdminController::class,'saveDepressedSaleRecordAJAX']);

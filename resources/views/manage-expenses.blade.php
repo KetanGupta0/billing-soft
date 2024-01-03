@@ -161,7 +161,8 @@
                                 <thead>
                                     <tr>
                                         <th width="5%">ID</th>
-                                        <th width="55%">Expense Name</th>
+                                        <th width="40%">Expense Name</th>
+                                        <th width="15%">Depressed</th>
                                         <th width="40%">Actions</th>
                                     </tr>
                                 </thead>
@@ -188,10 +189,15 @@
             $('#example').DataTable().destroy();
             $('#expenseList').html(``);
             $.each(res, function(key, value) {
+                let depressed = 'No';
+                if(value.depressible_type == 1){
+                    depressed = 'Yes';
+                }
                 $('#expenseList').append(`
                     <tr>
                         <td>${key+1}</td>
                         <td>${value.expense_name}</td>
+                        <td>${depressed}</td>
                         <td>
                             <div class="row">
                                 <div class="col-lg-4">
@@ -331,7 +337,6 @@
                     e_remarks: e_remarks,
                     e_for: e_for
                 },
-
                 function(res) {
                     if (res === true) {
                         if (role == 1) {
@@ -354,7 +359,7 @@
             });
         });
 
-        $(document).on('change', '#depressible-type', function() {
+        $(document).on('change', '#depressible_type', function() {
             let value = $(this).val();
             if (value == 1) {
                 $('.d-type').show();

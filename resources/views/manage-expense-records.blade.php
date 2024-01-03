@@ -119,17 +119,69 @@
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
+<!-- Default Modals -->
+<div id="saleModal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="saleModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saleModalLabel">Sale Assets</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"> </button>
+            </div>
+            <div class="modal-body">
+                <form action="#">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="amount"
+                                    placeholder="Enter Amount">
+                                <label for="amount">Amount</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-floating">
+                                <input type="date" class="form-control" id="date" placeholder="Enter Date"
+                                    onfocus="showPicker()">
+                                <label for="date">Date</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="form-floating">
+                                <select class="form-select" id="account" aria-label="Select Account">
+                                    <option selected>Select Account</option>
+                                    @foreach ($accounts as $acc)
+                                        <option value="{{ $acc->ac_id }}">{{ $acc->ac_name }}</option>
+                                    @endforeach
+                                </select>
+                                <label for="account">Account</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <label for="remarks">Remarks</label>
+                            <textarea class="form-control" name="remarks" id="remarks"></textarea>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="text-end">
+                                <div id="sale_submit" class="btn btn-outline-primary rounded-pill">Submit</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {{-- <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary ">Save Changes</button>
+            </div> --}}
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 <div class="main-content">
     <div class="page-content">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
-                        {{-- @if (session('error'))
-                            <div class="alert alert-danger">
-                                {{ session('error') }}
-                            </div>
-                        @endif --}}
                         <div class="card-header">
                             <form action="{{ url('print-expense-statement') }}" method="post" id="filter-form">
                                 @csrf
@@ -195,9 +247,9 @@
                                         <th width="5%">ID</th>
                                         <th width="19%">Date</th>
                                         <th width="19%">Remark</th>
-                                        <th width="19%">Amount</th>
-                                        <th width="19%">Account</th>
-                                        <th width="19%">Actions</th>
+                                        <th width="10%">Amount</th>
+                                        <th width="10%">Account</th>
+                                        <th width="37%">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="expenseList">
@@ -213,28 +265,82 @@
                                             <td>{{ $r->e_r_amount }}</td>
                                             <td>{{ $r->account }}</td>
                                             <td>
-                                                <div class="row">
-                                                    <div class="col-lg-6">
-                                                        <div>
-                                                            <div class="btn btn-secondary btn-label rounded-pill expense_record_edit"
-                                                                data-id="{{ $r->id }}" data-bs-toggle="modal"
-                                                                data-bs-target="#expenseEntry">
-                                                                <i
-                                                                    class="ri-quill-pen-line label-icon align-middle rounded-pill me-2"></i>Edit
+                                                @if ($expense->depressible_type == 1)
+                                                    <div class="row">
+                                                        <div class="col-lg-4">
+                                                            <div>
+                                                                <div class="btn btn-secondary btn-label rounded-pill expense_record_edit"
+                                                                    data-id="{{ $r->id }}"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#expenseEntry">
+                                                                    <i
+                                                                        class="ri-quill-pen-line label-icon align-middle rounded-pill me-2"></i>Edit
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        @if ($r->e_r_status == 1)
+                                                            <div class="col-lg-4">
+                                                                <div>
+                                                                    <div class="btn btn-primary btn-label rounded-pill expense_record_delete"
+                                                                        data-id="{{ $r->id }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#saleModal">
+                                                                        <i
+                                                                            class="las la-money-bill-wave-alt label-icon align-middle rounded-pill me-2"></i>Sell
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @elseif ($r->e_r_status == 2)
+                                                            <div class="col-lg-4">
+                                                                <div>
+                                                                    <div class="btn btn-warning btn-label rounded-pill expense_record_delete"
+                                                                        data-id="{{ $r->id }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#deleteRecordModal">
+                                                                        <i
+                                                                            class=" ri-eye-line label-icon align-middle rounded-pill me-2"></i>View
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                        <div class="col-lg-4">
+                                                            <div>
+                                                                <div class="btn btn-danger btn-label rounded-pill expense_record_delete"
+                                                                    data-id="{{ $r->id }}"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#deleteRecordModal">
+                                                                    <i
+                                                                        class="ri-delete-bin-2-line label-icon align-middle rounded-pill me-2"></i>Delete
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="col-lg-6">
-                                                        <div>
-                                                            <div class="btn btn-danger btn-label rounded-pill expense_record_delete"
-                                                                data-id="{{ $r->id }}" data-bs-toggle="modal"
-                                                                data-bs-target="#deleteRecordModal">
-                                                                <i
-                                                                    class="ri-delete-bin-2-line label-icon align-middle rounded-pill me-2"></i>Delete
+                                                @else
+                                                    <div class="row">
+                                                        <div class="col-lg-6">
+                                                            <div>
+                                                                <div class="btn btn-secondary btn-label rounded-pill expense_record_edit"
+                                                                    data-id="{{ $r->id }}"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#expenseEntry">
+                                                                    <i
+                                                                        class="ri-quill-pen-line label-icon align-middle rounded-pill me-2"></i>Edit
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6">
+                                                            <div>
+                                                                <div class="btn btn-danger btn-label rounded-pill expense_record_delete"
+                                                                    data-id="{{ $r->id }}"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#deleteRecordModal">
+                                                                    <i
+                                                                        class="ri-delete-bin-2-line label-icon align-middle rounded-pill me-2"></i>Delete
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
@@ -462,6 +568,32 @@
 
         $(document).on('input', '#from_date, #to_date', function() {
             filterList();
+        });
+
+        $(document).on('click', '#sale_submit', function() {
+            let amount = $('#amount').val();
+            let date = $('#date').val();
+            let account = $('#account').val();
+            let remarks = $('#remarks').val();
+            $.post("{{url('save-depressed-sale-record')}}", {
+                amount: amount,
+                date: date,
+                account: account,
+                remarks: remarks
+            },function(res){
+                console.log(res);
+                if(res === true){
+                    window.location.reload();
+                }
+            }).fail(
+                function(err){
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: err.responseJSON.message
+                    });
+                }
+            );
         });
     });
 </script>
