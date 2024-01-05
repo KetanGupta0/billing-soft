@@ -21,6 +21,7 @@ class SalesItems extends Model
         's_i_item_name',
         's_i_unit_new',
         's_i_tax',
-        's_i_discount'
+        's_i_discount',
+        'admin'
     ];
 }

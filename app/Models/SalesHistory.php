@@ -28,5 +28,6 @@ class SalesHistory extends Model
         's_h_status',
         's_h_deleted_by',
         's_h_deleted_at',
+        'admin'
     ];
 }

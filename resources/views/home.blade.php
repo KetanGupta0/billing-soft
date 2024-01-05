@@ -68,8 +68,8 @@
                     </ul>
 
                     <div class="">
-                        {{-- <a href="auth-signin-basic.html" class="btn btn-link fw-medium text-decoration-none text-body">Sign in</a> --}}
                         <a href="{{url('login')}}" class="btn btn-primary">Log In</a>
+                        <a href="{{url('register')}}" class="btn btn-success">Register</a>
                     </div>
                 </div>
 

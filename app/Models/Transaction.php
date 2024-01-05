@@ -16,6 +16,7 @@ class Transaction extends Model
         't_amount',
         't_final_amount',
         't_remarks',
-        't_date'
+        't_date',
+        'admin'
     ];
 }

@@ -357,7 +357,6 @@
 @include('common.footer');
 @if (session('error'))
     <script>
-        // Display SweetAlert2 modal with the error message
         Swal.fire({
             icon: 'error',
             title: 'Error!',
@@ -365,6 +364,7 @@
         });
     </script>
 @endif
+
 <script>
     $(document).ready(function() {
         $.ajaxSetup({

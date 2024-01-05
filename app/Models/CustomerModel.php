@@ -21,6 +21,7 @@ class CustomerModel extends Model
         'c_desc',
         'c_dues',
         'c_status',
-        'c_deleted_by'
+        'c_deleted_by',
+        'admin'
     ];
 }

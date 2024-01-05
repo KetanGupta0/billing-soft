@@ -11,5 +11,5 @@ class SlabModel extends Model
 
     protected $table = 'slab';
     protected $primaryKey = 'sl_id';
-    protected $fillable = ['sl_name', 'sl_per'];
+    protected $fillable = ['sl_name', 'sl_per', 'admin'];
 }

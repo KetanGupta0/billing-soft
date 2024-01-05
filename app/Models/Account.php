@@ -12,6 +12,7 @@ class Account extends Model
     protected $primaryKey = 'ac_id';
     protected $fillable = [
         'ac_name',
-        'ac_balance'
+        'ac_balance',
+        'admin'
     ];
 }

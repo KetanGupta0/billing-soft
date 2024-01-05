@@ -53,6 +53,7 @@ class AdminController extends Controller
             if ($admin->count() == 1) {
                 foreach ($admin as $data) {
                     session()->put('admin', $data->a_name);
+                    session()->put('adminid', $data->a_id);
                 }
 
                 echo 1;
@@ -74,8 +75,8 @@ class AdminController extends Controller
     function purchase_entry()
     {
         if (Session::has('admin')) {
-            $units = UnitModel::where('u_status', '=', 0)->get();
-            $slab = SlabModel::get();
+            $units = UnitModel::where('u_status', '=', 0)->where('admin', '=', Session::get('adminid'))->get();
+            $slab = SlabModel::where('admin', '=', Session::get('adminid'))->get();
             echo view('common/header') . view('purchase_entry', compact('units', 'slab')) . view('common/footer');
         } else {
             echo view('login');
@@ -112,8 +113,8 @@ class AdminController extends Controller
     function manage_stock()
     {
         if (Session::has('admin')) {
-            $units = UnitModel::where('u_status', '=', 0)->get();
-            $slab = SlabModel::get();
+            $units = UnitModel::where('u_status', '=', 0)->where('admin', '=', Session::get('adminid'))->get();
+            $slab = SlabModel::where('admin', '=', Session::get('adminid'))->get();
             echo view('common/header') . view('manage_stock', compact('units', 'slab')) . view('common/footer');
         } else {
             echo view('login');
@@ -132,8 +133,8 @@ class AdminController extends Controller
     function settings()
     {
         if (Session::has('admin')) {
-            $settings = AdminModel::where('a_name', '=', session('admin'))->get();
-            $units = UnitModel::where('u_status', '=', 0)->get();
+            $settings = AdminModel::where('a_id', '=', session('adminid'))->get();
+            $units = UnitModel::where('admin', '=', Session::get('adminid'))->where('u_status', '=', 0)->get();
             echo view('common/header') . view('settings', compact('settings', 'units')) . view('common/footer');
         } else {
             echo view('login');
@@ -153,7 +154,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             session()->flush();
-            echo view('login');
+            return redirect('/');
         } else {
             echo view('login');
         }
@@ -162,7 +163,7 @@ class AdminController extends Controller
     function save_settings(Request $req)
     {
         if (Session::has('admin')) {
-            $admin = AdminModel::find(1);
+            $admin = AdminModel::find(Session::get('adminid'));
             $admin->a_name = $req->a_name;
             $admin->a_add = $req->a_add;
             $admin->a_gst = $req->a_gst;
@@ -172,9 +173,7 @@ class AdminController extends Controller
             $admin->a_alert = $req->a_alert;
             $admin->save();
 
-
-            UnitModel::truncate();
-
+            UnitModel::where('admin','=',Session::get('adminid'))->delete();
             $allUnits = $req->units;
 
             if (isset($allUnits)) {
@@ -182,6 +181,7 @@ class AdminController extends Controller
                     $unitModel = new UnitModel();
                     if (!empty($unit)) {
                         $unitModel->u_name = $unit;
+                        $unitModel->admin = Session::get('adminid');
                         $unitModel->save();
                     }
                 }
@@ -200,6 +200,7 @@ class AdminController extends Controller
             } else {
                 $items = new ItemsModel;
                 $items->item_stock_retail = 0;
+                $items->admin = Session::get('adminid');
             }
             $items->item_hsn = $req->item_hsn;
             $items->item_name = $req->item_name;
@@ -257,9 +258,9 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             if ($req->type == 1) {
-                $items = ItemsModel::where('item_purchase_tax_type', '=', 1)->get();
+                $items = ItemsModel::where('admin', '=', Session::get('adminid'))->where('item_purchase_tax_type', '=', 1)->get();
             } else {
-                $items = ItemsModel::get();
+                $items = ItemsModel::where('admin', '=', Session::get('adminid'))->get();
             }
             return response()->json($items);
         } else {
@@ -290,7 +291,7 @@ class AdminController extends Controller
     function get_parties()
     {
         if (Session::has('admin')) {
-            $items = PartyModel::get();
+            $items = PartyModel::where('admin', '=', Session::get('adminid'))->get();
             return response()->json($items);
         } else {
             return response()->json(['message' => 'You should reload the page now!'], 400);
@@ -316,14 +317,10 @@ class AdminController extends Controller
         if (Session::has('admin')) {
             $item = ItemsModel::find($request->id);
             if ($item) {
-                if (Session::has('admin')) {
-                    if ($item->delete()) {
-                        return response()->json(['status' => true]);
-                    } else {
-                        return response()->json(['status' => 'Something went wrong from our end!'], 400);
-                    }
+                if ($item->delete()) {
+                    return response()->json(['status' => true]);
                 } else {
-                    return response()->json(['status' => 'Please login again!'], 400);
+                    return response()->json(['status' => 'Something went wrong from our end!'], 400);
                 }
             } else {
                 return response()->json(['status' => 'Stock already removed from server!'], 400);
@@ -337,7 +334,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             if ($request->button_role == 3) {
-                $history = PurchaseHistory::where('p_h_otp', '=', $request->p_e_b_otp)->first();
+                $history = PurchaseHistory::where('admin','=',Session::get('adminid'))->where('p_h_otp', '=', $request->p_e_b_otp)->first();
                 $pitem = PurchaseItem::find($request->p_i_id);
                 if ($pitem) {
                     $previousQty = $pitem->p_i_qty;
@@ -431,7 +428,8 @@ class AdminController extends Controller
                                 'item_mrp' => $request->item_mrp,
                                 'item_disc_whole' => $request->item_disc_whole,
                                 'item_disc_retail' => $request->item_disc_retail,
-                                'item_stock_whole' => $request->item_stock_whole
+                                'item_stock_whole' => $request->item_stock_whole,
+                                'admin' => Session::get('adminid'),
                             ]);
                             $pitem = PurchaseItem::create([
                                 'p_i_p_h_id' => $history->p_h_id,
@@ -439,6 +437,7 @@ class AdminController extends Controller
                                 'p_i_qty' => $request->item_stock_whole,
                                 'p_i_rate' => $request->item_purchase_rate,
                                 'p_i_total' => $request->item_total,
+                                'admin' => Session::get('adminid'),
                             ]);
                             $isPartyUpdated = $this->updateParty($request);
                             if ($isPartyUpdated) {
@@ -450,7 +449,6 @@ class AdminController extends Controller
                                     $invTotal += $pi->p_i_total;
                                     $data[] = array_merge($pi->toArray(), $item->toArray());
                                 }
-                                // Accounts and transactions calculations starting
                                 $transaction = UserTransaction::Find(Session::get('tnx_id'));
                                 $account = Account::find($request->tnx_account);
                                 if ($request->p_h_desc == '') {
@@ -551,7 +549,7 @@ class AdminController extends Controller
                         if ($isPartyUpdated) {
                             $data = [];
                             $invTotal = 0;
-                            $purchaseItems = PurchaseItem::where('p_i_p_h_id', $history->p_h_id)->orderBy('p_i_id', 'desc')->get();
+                            $purchaseItems = PurchaseItem::where('admin','=',Session::get('adminid'))->where('p_i_p_h_id', $history->p_h_id)->orderBy('p_i_id', 'desc')->get();
                             foreach ($purchaseItems as $pi) {
                                 $item = ItemsModel::find($pi->p_i_item_id);
                                 $invTotal += $pi->p_i_total;
@@ -655,7 +653,7 @@ class AdminController extends Controller
                     return response()->json(['message' => 'History not found!'], 400);
                 }
             }
-            $oldHistory = PurchaseHistory::where('p_h_otp', '=', $request->p_e_b_otp)->first();
+            $oldHistory = PurchaseHistory::where('admin','=',Session::get('adminid'))->where('p_h_otp', '=', $request->p_e_b_otp)->first();
             if ($oldHistory) {
                 $oldHistory->p_h_otp = $request->p_e_b_otp;
                 $oldHistory->p_h_dues = $request->p_h_dues;
@@ -678,7 +676,7 @@ class AdminController extends Controller
                     if ($isPartyUpdated) {
                         $data = [];
                         $invTotal = 0;
-                        $purchaseItems = PurchaseItem::where('p_i_p_h_id', $oldHistory->p_h_id)->orderBy('p_i_id', 'desc')->get();
+                        $purchaseItems = PurchaseItem::where('admin','=',Session::get('adminid'))->where('p_i_p_h_id', $oldHistory->p_h_id)->orderBy('p_i_id', 'desc')->get();
                         foreach ($purchaseItems as $pi) {
                             $item = ItemsModel::find($pi->p_i_item_id);
                             $invTotal += $pi->p_i_total;
@@ -789,12 +787,13 @@ class AdminController extends Controller
                 $history->p_h_veh_no = $request->p_h_veh_no;
                 $history->p_h_desc = $request->p_h_desc;
                 $history->p_h_del_date = $request->p_h_del_date;
+                $history->admin = Session::get('adminid');
                 $history->save();
                 $isItemsCreated = $this->createPurchaseItems($history, $request);
                 if ($isItemsCreated) {
                     $data = [];
                     $invTotal = 0;
-                    $purchaseItems = PurchaseItem::where('p_i_p_h_id', $history->p_h_id)->orderBy('p_i_id', 'desc')->get();
+                    $purchaseItems = PurchaseItem::where('admin','=',Session::get('adminid'))->where('p_i_p_h_id', $history->p_h_id)->orderBy('p_i_id', 'desc')->get();
                     foreach ($purchaseItems as $pi) {
                         $item = ItemsModel::find($pi->p_i_item_id);
                         $invTotal += $pi->p_i_total;
@@ -824,7 +823,8 @@ class AdminController extends Controller
                             'tnx_account' => $account->ac_id,
                             'tnx_remark' => $history->p_h_bill_no . ', ' . $description,
                             'tnx_closing_ac_bal' => $fianlAcBal,
-                            'tnx_invoice' => $history->p_h_id
+                            'tnx_invoice' => $history->p_h_id,
+                            'admin' => Session::get('adminid')
                         ]);
                     } elseif ($amt < 0) {
                         $transaction = UserTransaction::create([
@@ -839,7 +839,8 @@ class AdminController extends Controller
                             'tnx_account' => $account->ac_id,
                             'tnx_remark' => $history->p_h_bill_no . ', ' . $description,
                             'tnx_closing_ac_bal' => $fianlAcBal,
-                            'tnx_invoice' => $history->p_h_id
+                            'tnx_invoice' => $history->p_h_id,
+                            'admin' => Session::get('adminid')
                         ]);
                     }
                     Session::put('tnx_id', $transaction->tnx_id);
@@ -875,6 +876,7 @@ class AdminController extends Controller
                 'p_state' => $request->p_state,
                 'p_desc' => $request->p_desc,
                 'p_dues' => $request->p_h_dues,
+                'admin' => Session::get('adminid')
             ]);
             if ($result) {
                 return $result;
@@ -986,7 +988,8 @@ class AdminController extends Controller
                     'item_mrp' => $request->item_mrp,
                     'item_disc_whole' => $request->item_disc_whole,
                     'item_disc_retail' => $request->item_disc_retail,
-                    'item_exp_alert_time' => $request->item_exp_alert_time
+                    'item_exp_alert_time' => $request->item_exp_alert_time,
+                    'admin' => Session::get('adminid')
                 ]);
             }
             $previousItems = PurchaseItem::get();
@@ -1012,6 +1015,7 @@ class AdminController extends Controller
                     'p_i_qty' => $request->item_stock_whole,
                     'p_i_rate' => $request->item_purchase_rate,
                     'p_i_total' => $request->item_total,
+                    'admin' => Session::get('adminid')
                 ]);
             }
             return $result;
@@ -1170,7 +1174,7 @@ class AdminController extends Controller
     public function getCustomers()
     {
         if (Session::has('admin')) {
-            $customers = CustomerModel::get();
+            $customers = CustomerModel::where('admin','=',Session::get('adminid'))->get();
             if ($customers) {
                 return response()->json(['status' => true, 'data' => $customers], 200);
             } else {
@@ -1200,7 +1204,7 @@ class AdminController extends Controller
     public function fetchBaseUnitsAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            $baseUnits = UnitModel::get();
+            $baseUnits = UnitModel::where('admin','=',Session::get('adminid'))->get();
             if ($baseUnits) {
                 return response()->json($baseUnits);
             } else {
@@ -1214,7 +1218,7 @@ class AdminController extends Controller
     public function fetchGstSlabAJAX()
     {
         if (Session::has('admin')) {
-            $gstSlab = SlabModel::get();
+            $gstSlab = SlabModel::where('admin','=',Session::get('adminid'))->get();
             if ($gstSlab) {
                 return response()->json($gstSlab);
             } else {
@@ -1230,9 +1234,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $findCustomer = CustomerModel::find($req->c_id);
-
             if ($findCustomer) {
-
                 $result = $findCustomer->update([
                     'c_name' => $req->c_name,
                     'c_gst' => $req->c_gst,
@@ -1243,12 +1245,10 @@ class AdminController extends Controller
                     'c_desc' => $req->c_desc,
                     'c_dues' => $req->s_h_due
                 ]);
-
                 if (!$result) {
                     return response()->json(['status' => 'Error in updating customer info!'], 200);
                 }
-
-                $salesHistoryResult = SalesHistory::where('s_h_otp', '=', $req->p_h_otp)->first();
+                $salesHistoryResult = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_otp', '=', $req->p_h_otp)->first();
                 if ($salesHistoryResult) {
                     $salesHistoryResult->update([
                         's_h_otp' => $req->p_h_otp,
@@ -1285,10 +1285,9 @@ class AdminController extends Controller
                         's_h_other' => $req->s_h_other,
                         's_h_due' => $req->s_h_due,
                         's_h_paid' => $req->s_h_paid,
+                        'admin' => Session::get('adminid')
                     ]);
                 }
-
-
                 $item = ItemsModel::find($req->item_id);
                 if ($item && $salesHistoryResult) {
                     if ($req->btnType == 1) {
@@ -1297,6 +1296,7 @@ class AdminController extends Controller
                             ->where('s_i_qty', '=', $req->s_h_qty)
                             ->where('s_i_rate', '=', $req->item_rate)
                             ->where('s_i_total', '=', $req->amount)
+                            ->where('admin','=',Session::get('adminid'))
                             ->first();
                         if ($test) {
                             $salesItemResult = true;
@@ -1310,7 +1310,8 @@ class AdminController extends Controller
                                     's_i_item_id' => $req->item_id,
                                     's_i_qty' => $req->s_h_qty,
                                     's_i_rate' => $item->item_sale_rate_whole_base,
-                                    's_i_total' => $req->amount
+                                    's_i_total' => $req->amount,
+                                    'admin' => Session::get('adminid')
                                 ]);
                             } else {
                                 $salesItemResult = SalesItems::create([
@@ -1318,7 +1319,8 @@ class AdminController extends Controller
                                     's_i_item_id' => $req->item_id,
                                     's_i_qty' => $req->s_h_qty,
                                     's_i_rate' => $item->item_sale_rate_retail_base,
-                                    's_i_total' => $req->amount
+                                    's_i_total' => $req->amount,
+                                    'admin' => Session::get('adminid')
                                 ]);
                             }
                         }
@@ -1332,7 +1334,8 @@ class AdminController extends Controller
                                 's_i_item_id' => $req->item_id,
                                 's_i_qty' => $req->s_h_qty,
                                 's_i_rate' => $item->item_sale_rate_whole_base,
-                                's_i_total' => $req->amount
+                                's_i_total' => $req->amount,
+                                'admin' => Session::get('adminid')
                             ]);
                         } else {
                             $salesItemResult = SalesItems::create([
@@ -1340,7 +1343,8 @@ class AdminController extends Controller
                                 's_i_item_id' => $req->item_id,
                                 's_i_qty' => $req->s_h_qty,
                                 's_i_rate' => $item->item_sale_rate_retail_base,
-                                's_i_total' => $req->amount
+                                's_i_total' => $req->amount,
+                                'admin' => Session::get('adminid')
                             ]);
                         }
                     }
@@ -1368,14 +1372,13 @@ class AdminController extends Controller
                     'c_smob' => $req->c_smob,
                     'c_state' => $req->c_state,
                     'c_desc' => $req->c_desc,
-                    'c_dues' => $req->s_h_due
+                    'c_dues' => $req->s_h_due,
+                    'admin' => Session::get('adminid')
                 ]);
-
                 $billNo = 'BE' . rand(111111111, 999999999);
                 while (SalesHistory::where('s_h_bill_no', $billNo)->exists()) {
                     $billNo = 'BE' . rand(111111111, 999999999);
                 }
-
                 if ($newCustomer) {
                     $salesHistoryResult = SalesHistory::create([
                         's_h_otp' => $req->p_h_otp,
@@ -1392,8 +1395,8 @@ class AdminController extends Controller
                         's_h_other' => $req->s_h_other,
                         's_h_due' => $req->s_h_due,
                         's_h_paid' => $req->s_h_paid,
+                        'admin' => Session::get('adminid')
                     ]);
-
                     $item = ItemsModel::find($req->item_id);
                     $salesItemResult = false;
                     if ($item && $salesHistoryResult) {
@@ -1403,6 +1406,7 @@ class AdminController extends Controller
                                 ->where('s_i_qty', '=', $req->s_h_qty)
                                 ->where('s_i_rate', '=', $req->item_rate)
                                 ->where('s_i_total', '=', $req->amount)
+                                ->where('admin','=',Session::get('adminid'))
                                 ->first();
                             if ($test) {
                                 $salesItemResult = $test;
@@ -1416,7 +1420,8 @@ class AdminController extends Controller
                                         's_i_item_id' => $req->item_id,
                                         's_i_qty' => $req->s_h_qty,
                                         's_i_rate' => $item->item_sale_rate_whole_base,
-                                        's_i_total' => $req->amount
+                                        's_i_total' => $req->amount,
+                                        'admin' => Session::get('adminid')
                                     ]);
                                 } else {
                                     $salesItemResult = SalesItems::create([
@@ -1424,7 +1429,8 @@ class AdminController extends Controller
                                         's_i_item_id' => $req->item_id,
                                         's_i_qty' => $req->s_h_qty,
                                         's_i_rate' => $item->item_sale_rate_retail_base,
-                                        's_i_total' => $req->amount
+                                        's_i_total' => $req->amount,
+                                        'admin' => Session::get('adminid')
                                     ]);
                                 }
                             }
@@ -1438,7 +1444,8 @@ class AdminController extends Controller
                                     's_i_item_id' => $req->item_id,
                                     's_i_qty' => $req->s_h_qty,
                                     's_i_rate' => $item->item_sale_rate_whole_base,
-                                    's_i_total' => $req->amount
+                                    's_i_total' => $req->amount,
+                                    'admin' => Session::get('adminid')
                                 ]);
                             } else {
                                 $salesItemResult = SalesItems::create([
@@ -1446,7 +1453,8 @@ class AdminController extends Controller
                                     's_i_item_id' => $req->item_id,
                                     's_i_qty' => $req->s_h_qty,
                                     's_i_rate' => $item->item_sale_rate_retail_base,
-                                    's_i_total' => $req->amount
+                                    's_i_total' => $req->amount,
+                                    'admin' => Session::get('adminid')
                                 ]);
                             }
                         }
@@ -1490,36 +1498,38 @@ class AdminController extends Controller
     public function generateInvoice(Request $request, $otp, $billfor, $type)
     {
         if (Session::has('admin')) {
-            $historyID = SalesHistory::where('s_h_otp', '=', $otp)->first();
+            $historyID = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_otp', '=', $otp)->first();
             if ($billfor == 'salesentry' && $type == 'gst') {
                 $result = SalesHistory::join('sales_items', 'sales_items.s_i_s_h_id', '=', 'sales_history.s_h_id')
                     ->join('items', 'items.item_id', '=', 'sales_items.s_i_item_id')
                     ->where('sales_history.s_h_otp', '=', $otp)
+                    ->where('sales_history.admin', '=', Session::get('adminid'))
                     ->get(['sales_items.*', 'sales_history.*', 'items.*']);
 
                 $customer = CustomerModel::find($historyID->s_h_customer_id);
                 $uniqueItemHsns = $result->pluck('item_hsn')->unique()->toArray();
                 $items = [];
                 foreach ($uniqueItemHsns as $hsn) {
-                    $temp = ItemsModel::where('item_hsn', '=', $hsn)->orderBy('item_id', 'desc')->get()->toArray();
+                    $temp = ItemsModel::where('admin','=',Session::get('adminid'))->where('item_hsn', '=', $hsn)->orderBy('item_id', 'desc')->get()->toArray();
                     $items = array_merge($temp, $items);
                 }
                 $items = array_reverse($items);
                 $state = StateModel::get();
-                $unit = UnitModel::get();
-                $slab = SlabModel::get();
+                $unit = UnitModel::where('admin','=',Session::get('adminid'))->get();
+                $slab = SlabModel::where('admin','=',Session::get('adminid'))->get();
                 $admin = AdminModel::find(1);
-                $newSelling = SalesItems::where('s_i_s_h_id', '=', $historyID->s_h_id)->where('s_i_item_id', '=', 0)->get();
+                $newSelling = SalesItems::where('admin','=',Session::get('adminid'))->where('s_i_s_h_id', '=', $historyID->s_h_id)->where('s_i_item_id', '=', 0)->get();
                 // return response()->json($result);
                 return view('invoice', compact('result', 'customer', 'state', 'unit', 'slab', 'admin', 'items', 'billfor', 'newSelling', 'historyID'));
             } else if ($billfor == 'salesentry' && $type == 'nongst') {
                 $result = SalesHistory::join('sales_items', 'sales_items.s_i_s_h_id', '=', 'sales_history.s_h_id')
                     ->join('items', 'items.item_id', '=', 'sales_items.s_i_item_id')
                     ->where('sales_history.s_h_otp', '=', $otp)
+                    ->where('sales_history.admin', '=', Session::get('adminid'))
                     ->get(['sales_items.*', 'sales_history.*', 'items.*']);
                 $c_id = $result->pluck('s_h_customer_id')->unique();
                 $s_h_id = $result->pluck('s_i_s_h_id')->unique();
-                $newSelling = SalesItems::where('s_i_s_h_id', '=', $historyID->s_h_id)->where('s_i_item_id', '=', 0)->get();
+                $newSelling = SalesItems::where('admin','=',Session::get('adminid'))->where('s_i_s_h_id', '=', $historyID->s_h_id)->where('s_i_item_id', '=', 0)->get();
                 $customer = CustomerModel::find($historyID->s_h_customer_id);
                 // return response()->json($result);
                 return view('nongstinvoice', compact('result', 'customer', 'newSelling', 'historyID'));
@@ -1534,30 +1544,26 @@ class AdminController extends Controller
     public function removeItemForGenerateInvoiceAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            $history = SalesHistory::where('s_h_otp', '=', $req->otp)->first();
+            $history = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_otp', '=', $req->otp)->first();
             if ($history) {
                 $saleItem = SalesItems::where('s_i_s_h_id', '=', $history->s_h_id)
                     ->where('s_i_item_id', '=', $req->item_id)
                     ->where('s_i_qty', '=', $req->s_h_qty)
                     ->where('s_i_rate', '=', $req->item_rate)
                     ->where('s_i_total', '=', $req->amount)
+                    ->where('admin','=',Session::get('adminid'))
                     ->first();
                 if ($saleItem) {
                     $item = ItemsModel::find($req->item_id);
-
                     $item->item_stock_whole = $item->item_stock_whole + $req->s_h_qty;
                     $item->save();
-
                     $customer = CustomerModel::find($history->s_h_customer_id);
-
                     $customer->c_dues = $customer->c_dues - $req->amount;
                     $customer->save();
-
                     $history->s_h_due = $history->s_h_due - $req->amount;
                     $history->s_h_grand = $history->s_h_grand - $req->amount;
                     $history->s_h_total = $history->s_h_total - $req->amount;
                     $history->save();
-
                     if (SalesItems::destroy($saleItem->s_i_id)) {
                         return response()->json(['status' => true, 'msg' => false]);
                     } else {
@@ -1577,7 +1583,7 @@ class AdminController extends Controller
     public function fetchKhatabookListAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            $customer = CustomerModel::get();
+            $customer = CustomerModel::where('admin','=',Session::get('adminid'))->get();
             return response()->json(['status' => true, 'data' => $customer]);
         } else {
             return response()->json(['message' => 'You should reload the page now!'], 400);
@@ -1622,7 +1628,8 @@ class AdminController extends Controller
                 'c_desc' => $req->c_desc,
                 'c_dues' => $req->c_dues,
                 'c_status' => 1,
-                'c_deleted_by' => 0
+                'c_deleted_by' => 0,
+                'admin' => Session::get('adminid')
             ]);
             if ($result) {
                 return response()->json(true);
@@ -1638,7 +1645,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $list = [];
-            $purchaseHistories = PurchaseHistory::get();
+            $purchaseHistories = PurchaseHistory::where('admin','=',Session::get('adminid'))->get();
             foreach ($purchaseHistories as $history) {
                 $party = PartyModel::find($history->p_h_party_id);
                 $list[] = array_merge($history->toArray(), $party->toArray());
@@ -1652,10 +1659,10 @@ class AdminController extends Controller
     public function editPurchaseHistoryIdAJAX($historyId)
     {
         if (Session::has('admin')) {
-            $units = UnitModel::where('u_status', '=', 0)->get();
-            $slab = SlabModel::get();
+            $units = UnitModel::where('admin','=',Session::get('adminid'))->where('u_status', '=', 0)->get();
+            $slab = SlabModel::where('admin','=',Session::get('adminid'))->get();
             $history = PurchaseHistory::find($historyId);
-            $purchaseitems = PurchaseItem::where('p_i_p_h_id', '=', $historyId)->orderBy('p_i_id', 'desc')->get();
+            $purchaseitems = PurchaseItem::where('admin','=',Session::get('adminid'))->where('p_i_p_h_id', '=', $historyId)->orderBy('p_i_id', 'desc')->get();
             $pItems = [];
             foreach ($purchaseitems as $purchItem) {
                 $item = ItemsModel::find($purchItem->p_i_item_id);
@@ -1663,15 +1670,12 @@ class AdminController extends Controller
             }
             $party = PartyModel::find($history->p_h_party_id);
             $state = StateModel::find($party->p_state);
-
             $itemIds = $purchaseitems->pluck('p_i_item_id')->unique()->toArray();
             $items = [];
             foreach ($itemIds as $id) {
                 $item = ItemsModel::find($id);
                 $items[] = $item->toArray();
             }
-
-            // return response()->json($pItems);
             echo view('purchase_entry_data', compact('units', 'slab', 'history', 'pItems', 'party', 'items', 'state'));
         } else {
             echo view('login');
@@ -1684,7 +1688,7 @@ class AdminController extends Controller
             $history = PurchaseHistory::find($historyId);
             if ($history) {
                 try {
-                    PurchaseItem::where('p_i_p_h_id', '=', $history->p_h_id)->delete();
+                    PurchaseItem::where('admin','=',Session::get('adminid'))->where('p_i_p_h_id', '=', $history->p_h_id)->delete();
                     $history->delete();
                     return redirect()->back()->with('status', ['success' => true]);
                 } catch (\Exception $e) {
@@ -1701,7 +1705,7 @@ class AdminController extends Controller
     public function fetchSalesEntriesAJAX(Request $request)
     {
         if (Session::has('admin')) {
-            $salesHistories = SalesHistory::get();
+            $salesHistories = SalesHistory::where('admin','=',Session::get('adminid'))->get();
             $data = [];
             foreach ($salesHistories as $history) {
                 $customer = CustomerModel::find($history->s_h_customer_id);
@@ -1717,7 +1721,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $history = SalesHistory::find($historyId);
-            $sItems = SalesItems::where('s_i_s_h_id', '=', $historyId)->get();
+            $sItems = SalesItems::where('admin','=',Session::get('adminid'))->where('s_i_s_h_id', '=', $historyId)->get();
             $saleItems = [];
             foreach ($sItems as $sale) {
                 $item = ItemsModel::find($sale->s_i_item_id);
@@ -1738,7 +1742,7 @@ class AdminController extends Controller
     public function fetchcustomersListAJAX(Request $request)
     {
         if (Session::has('admin')) {
-            $customer = CustomerModel::get();
+            $customer = CustomerModel::where('admin','=',Session::get('adminid'))->get();
             return response()->json($customer);
         } else {
             return response()->json(['message' => 'You should reload the page now!'], 400);
@@ -1818,7 +1822,8 @@ class AdminController extends Controller
             ]);
             $result = Account::create([
                 'ac_name' => $request->ac_name,
-                'ac_balance' => $request->ac_balance
+                'ac_balance' => $request->ac_balance,
+                'admin' => Session::get('adminid')
             ]);
             if ($result) {
                 return response()->json(true);
@@ -1833,7 +1838,7 @@ class AdminController extends Controller
     public function fetchAccountsInfoAJAX()
     {
         if (Session::has('admin')) {
-            $accounts = Account::get();
+            $accounts = Account::where('admin','=',Session::get('adminid'))->get();
             if ($accounts) {
                 return response()->json($accounts);
             } else {
@@ -1950,7 +1955,8 @@ class AdminController extends Controller
                     't_amount' => $request->t_amount,
                     't_final_amount' => $account->ac_balance,
                     't_remarks' => $request->t_remark,
-                    't_date' => $request->t_date
+                    't_date' => $request->t_date,
+                    'admin' => Session::get('adminid')
                 ]);
                 if ($result) {
                     return response()->json(true);
@@ -1966,7 +1972,7 @@ class AdminController extends Controller
     public function fetchPartiesListAJAX()
     {
         if (Session::has('admin')) {
-            return response()->json(PartyModel::get());
+            return response()->json(PartyModel::where('admin','=',Session::get('adminid'))->get());
         } else {
             return response()->json(['message' => 'You should reload the page now!'], 400);
         }
@@ -2006,7 +2012,8 @@ class AdminController extends Controller
                 'p_smob' => $req->p_smob,
                 'p_state' => $req->p_state,
                 'p_desc' => $req->p_desc,
-                'p_dues' => $req->p_dues
+                'p_dues' => $req->p_dues,
+                'admin' => Session::get('adminid')
             ]);
             if ($result) {
                 return response()->json(true);
@@ -2023,8 +2030,7 @@ class AdminController extends Controller
         if (Session::has('admin')) {
             $id = $req->p_id;
             $party = PartyModel::find($id);
-            $purchaseHistories = PurchaseHistory::where('p_h_party_id', $id)->get();
-
+            $purchaseHistories = PurchaseHistory::where('admin','=',Session::get('adminid'))->where('p_h_party_id', $id)->get();
             foreach ($purchaseHistories as $purchaseHistory) {
                 $purchaseHistory->delete();
             }
@@ -2043,9 +2049,9 @@ class AdminController extends Controller
         if (Session::has('admin')) {
             // return response()->json($req);
             if ($req->type == 1) {
-                $items = ItemsModel::where('item_purchase_tax_type', '=', 1)->get();
+                $items = ItemsModel::where('admin','=',Session::get('adminid'))->where('item_purchase_tax_type', '=', 1)->get();
             } else {
-                $items = ItemsModel::get();
+                $items = ItemsModel::where('admin','=',Session::get('adminid'))->get();
             }
             return response()->json($items);
         } else {
@@ -2056,8 +2062,7 @@ class AdminController extends Controller
     public function saveSaleDataAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            // return response()->json($req);
-            $salesHistory = SalesHistory::where('s_h_otp', $req->p_h_otp)->first();
+            $salesHistory = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_otp', $req->p_h_otp)->first();
             $customer = CustomerModel::find($req->c_id);
             if ($customer) {
                 $customer->update([
@@ -2081,7 +2086,8 @@ class AdminController extends Controller
                     'c_state' => $req->c_state,
                     'c_add' => $req->c_add,
                     'c_dues' => $req->s_h_due,
-                    'c_desc' => $req->c_desc
+                    'c_desc' => $req->c_desc,
+                    'admin' => Session::get('adminid')
                 ]);
             }
             if ($salesHistory) {
@@ -2122,14 +2128,14 @@ class AdminController extends Controller
                     's_h_other' => $req->s_h_other,
                     's_h_due' => $req->s_h_due,
                     's_h_status' => 1,
-                    's_h_deleted_by' => 0
+                    's_h_deleted_by' => 0,
+                    'admin' => Session::get('adminid')
                 ]);
             }
             $item = ItemsModel::find($req->item_id);
             $saleItem = SalesItems::find($req->p_i_id);
             if ($item) {
                 if ($req->base_unit == $item->item_base_unit) {
-                    // $item->item_stock_retail = $req->stock%$item->item_conversion_rate;
                     $item->item_stock_whole = $req->stock;
                     $item->save();
                     if ($item->item_name == $req->item_name) {
@@ -2160,7 +2166,8 @@ class AdminController extends Controller
                                 's_i_item_name' => $req->item_name,
                                 's_i_discount' => $req->item_discount,
                                 's_i_tax' => $req->gstslab,
-                                's_i_unit_new' => $req->base_unit
+                                's_i_unit_new' => $req->base_unit,
+                                'admin' => Session::get('adminid')
                             ]);
                         }
                     } else {
@@ -2192,17 +2199,14 @@ class AdminController extends Controller
                                 's_i_item_name' => $req->item_name,
                                 's_i_discount' => $req->item_discount,
                                 's_i_tax' => $req->gstslab,
-                                's_i_unit_new' => $req->base_unit
+                                's_i_unit_new' => $req->base_unit,
+                                'admin' => Session::get('adminid')
                             ]);
                         }
                     }
                 } else if ($req->base_unit == $item->item_sub_unit) {
-                    // $totalStock = (($req->item_stock_whole * $item->item_conversion_rate) - $req->stock)/100;
-                    // $totalStock = (($req->item_stock_whole * $item->item_conversion_rate) + $req->item_stock_retail);
-
                     $retailStock = $req->stock % $item->item_conversion_rate;
                     $wholeStock = ($req->stock - $retailStock) / $item->item_conversion_rate;
-
                     $item->item_stock_whole = $wholeStock;
                     $item->item_stock_retail = $retailStock;
                     $item->save();
@@ -2233,7 +2237,8 @@ class AdminController extends Controller
                                 's_i_item_name' => $req->item_name,
                                 's_i_discount' => $req->item_discount,
                                 's_i_tax' => $req->gstslab,
-                                's_i_unit_new' => $req->base_unit
+                                's_i_unit_new' => $req->base_unit,
+                                'admin' => Session::get('adminid')
                             ]);
                         }
                     } else {
@@ -2263,7 +2268,8 @@ class AdminController extends Controller
                                 's_i_item_name' => $req->item_name,
                                 's_i_discount' => $req->item_discount,
                                 's_i_tax' => $req->gstslab,
-                                's_i_unit_new' => $req->base_unit
+                                's_i_unit_new' => $req->base_unit,
+                                'admin' => Session::get('adminid')
                             ]);
                         }
                     }
@@ -2295,7 +2301,8 @@ class AdminController extends Controller
                         's_i_item_name' => $req->item_name,
                         's_i_discount' => $req->item_discount,
                         's_i_tax' => $req->gstslab,
-                        's_i_unit_new' => $req->base_unit
+                        's_i_unit_new' => $req->base_unit,
+                        'admin' => Session::get('adminid')
                     ]);
                 }
             }
@@ -2314,20 +2321,17 @@ class AdminController extends Controller
         if (Session::has('admin')) {
             $s_i_id = $req->id;
             $s_h_otp = $req->otp;
-            $salesHistory = SalesHistory::where('s_h_otp', '=', $s_h_otp)->first();
+            $salesHistory = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_otp', '=', $s_h_otp)->first();
             $saleItem = SalesItems::find($req->id);
-            // return response()->json($req);
             if ($saleItem) {
                 if ($saleItem->s_i_s_h_id == $salesHistory->s_h_id) {
                     $salesHistory->s_h_grand = $salesHistory->s_h_grand - $saleItem->s_i_total;
                     $salesHistory->s_h_total = $salesHistory->s_h_total - $saleItem->s_i_total;
                     $salesHistory->s_h_due = $salesHistory->s_h_due - $saleItem->s_i_total;
                     $salesHistory->save();
-
                     $customer = CustomerModel::find($salesHistory->s_h_customer_id);
                     $customer->c_dues = $customer->c_dues - $saleItem->s_i_total;
                     $customer->save();
-
                     $item = ItemsModel::find($saleItem->s_i_item_id);
                     if ($item) {
                         if ($saleItem->unit == 1) {
@@ -2336,16 +2340,13 @@ class AdminController extends Controller
                         } else {
                             $retailStock = ($item->item_stock_whole * $item->item_conversion_rate) + $item->item_stock_retail;
                             $calculatedRetailStock = $retailStock + $saleItem->s_i_qty;
-
                             $finalStockRetail = $calculatedRetailStock % $item->item_conversion_rate;
                             $finalStockWhole = ($calculatedRetailStock - $saleItem->s_i_qty) / $item->item_conversion_rate;
-
                             $item->item_stock_whole = $finalStockWhole;
                             $item->item_stock_retail = $finalStockRetail;
                             $item->save();
                         }
                     }
-
                     $saleItem->delete();
                 }
             }
@@ -2393,7 +2394,7 @@ class AdminController extends Controller
     public function fetchAccountListAJAX()
     {
         if (Session::has('admin')) {
-            $acc = Account::get();
+            $acc = Account::where('admin','=',Session::get('adminid'))->get();
             return response()->json($acc);
         } else {
             return response()->json(['message' => 'You should reload the page now!'], 400);
@@ -2403,7 +2404,6 @@ class AdminController extends Controller
     public function saveUserTransactionAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            // return response()->json($req);
             if ($req->tnx_user_type == 1) {
                 $user = CustomerModel::find($req->tnx_user_id);
                 $username = $user->c_name;
@@ -2413,9 +2413,7 @@ class AdminController extends Controller
             } else {
                 return response()->json(['message' => 'User type error!'], 400);
             }
-
             $account = Account::find($req->tnx_account);
-
             if ($account) {
                 if ($req->tnx_user_type == 1) {
                     $preDues = $user->c_dues;
@@ -2440,7 +2438,8 @@ class AdminController extends Controller
                     'tnx_final_dues' => $finalDues,
                     'tnx_account' => $req->tnx_account,
                     'tnx_remark' => $req->tnx_remark,
-                    'tnx_closing_ac_bal' => $account->ac_balance
+                    'tnx_closing_ac_bal' => $account->ac_balance,
+                    'admin' => Session::get('adminid')
                 ]);
                 if ($req->tnx_user_type == 1) {
                     $user->c_dues = $finalDues;
@@ -2460,9 +2459,9 @@ class AdminController extends Controller
     public function viewAccount($id)
     {
         if (Session::has('admin')) {
-            $transactionsQuery = Transaction::where('t_ac_id', '=', $id)
+            $transactionsQuery = Transaction::where('admin','=',Session::get('adminid'))->where('t_ac_id', '=', $id)
                 ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
-            $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $id)
+            $userTransactionsQuery = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_account', '=', $id)
                 ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
             $transactions = $transactionsQuery->get();
             $userTransactions = $userTransactionsQuery->get();
@@ -2471,7 +2470,6 @@ class AdminController extends Controller
             $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
                 return $transaction['created_at'] ?? $transaction['created_at'];
             });
-
             return view('account-view', compact('mergedTransactions', 'account'));
         } else {
             echo view('login');
@@ -2528,7 +2526,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $party = PartyModel::find($id);
-            $transactions = UserTransaction::where('tnx_user_id', '=', $id)->where('tnx_user_type', '=', 2)->get();
+            $transactions = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_user_id', '=', $id)->where('tnx_user_type', '=', 2)->get();
             if (Session::has('userType')) {
                 Session::pull('userType');
             }
@@ -2542,7 +2540,7 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $customer = CustomerModel::find($id);
-            $transactions = UserTransaction::where('tnx_user_id', '=', $id)->where('tnx_user_type', '=', 1)->get();
+            $transactions = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_user_id', '=', $id)->where('tnx_user_type', '=', 1)->get();
             if (Session::has('userType')) {
                 Session::pull('userType');
             }
@@ -2588,16 +2586,15 @@ class AdminController extends Controller
     public function salesTransactionsAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            $history = SalesHistory::where('s_h_otp', '=', $req->s_h_otp)->first();
+            $history = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_otp', '=', $req->s_h_otp)->first();
             if ($history) {
                 $user = CustomerModel::find($history->s_h_customer_id);
-                $items = SalesItems::where('s_i_s_h_id', '=', $history->s_h_id)->get();
+                $items = SalesItems::where('admin','=',Session::get('adminid'))->where('s_i_s_h_id', '=', $history->s_h_id)->get();
                 if ($history->s_h_paid > 0) {
                     $acc = Account::find($req->tnx_account);
                     $newAccBalance = (int)$acc->ac_balance + (int)$req->s_h_paid;
                     $acc->ac_balance = $newAccBalance;
                     $acc->save();
-
                     $tnx_amount = $req->s_h_paid;
                     $tnx_type = 1;
                     $tnx_account = $req->tnx_account;
@@ -2612,7 +2609,6 @@ class AdminController extends Controller
                     $tnx_closing_ac_bal = $newAccBalance;
                     $tnx_invoice = $history->s_h_id;
                     $tnx_date = $history->s_h_bill_date;
-
                     UserTransaction::create([
                         'tnx_user_id' => $tnx_user_id,
                         'tnx_user_name' => $user->c_name,
@@ -2624,7 +2620,8 @@ class AdminController extends Controller
                         'tnx_account' => $tnx_account,
                         'tnx_remark' => $tnx_remark,
                         'tnx_closing_ac_bal' => $tnx_closing_ac_bal,
-                        'tnx_invoice' => $tnx_invoice
+                        'tnx_invoice' => $tnx_invoice,
+                        'admin' => Session::get('adminid')
                     ]);
                     return response()->json(true);
                 } else {
@@ -2649,7 +2646,7 @@ class AdminController extends Controller
                 $type = 2;
             }
             if ($usr) {
-                $transactions = UserTransaction::where('tnx_user_id', '=', $req->id)->where('tnx_user_type', '=', $type)->get();
+                $transactions = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_user_id', '=', $req->id)->where('tnx_user_type', '=', $type)->get();
                 return response()->json(['tnx' => $transactions, 'user' => $usr]);
             }
         } else {
@@ -2659,14 +2656,17 @@ class AdminController extends Controller
 
     public function fetchPartiesInfoAJAX(Request $req)
     {
-        return response()->json(PartyModel::find($req->id));
+        if(Session::has('admin')){
+            return response()->json(PartyModel::find($req->id));
+        }else{
+            return redirect()->back()->with('error','Please reload the page!');
+        }
     }
 
     public function updatePartyAJAX(Request $req)
     {
         if (Session::has('admin')) {
             $party = PartyModel::find($req->p_id);
-            // return response()->json($party);
             if ($party) {
                 $party->update([
                     'p_name' => $req->p_name,
@@ -2688,7 +2688,7 @@ class AdminController extends Controller
     public function stockAlertAJAX()
     {
         if (Session::has('admin')) {
-            $items = ItemsModel::where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
+            $items = ItemsModel::where('admin','=',Session::get('adminid'))->where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
                 ->orWhere('item_min_stock', '=', DB::raw('items.item_stock_whole'))->orWhere('item_exp_date', '<=', date('Y-m-d'))
                 ->count();
             return response()->json($items);
@@ -2709,7 +2709,7 @@ class AdminController extends Controller
     public function fetchAlertItemsAJAX()
     {
         if (Session::has('admin')) {
-            $items = ItemsModel::where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
+            $items = ItemsModel::where('admin','=',Session::get('adminid'))->where('item_min_stock', '>', DB::raw('items.item_stock_whole'))
                 ->orWhere('item_min_stock', '=', DB::raw('items.item_stock_whole'))->orWhere('item_exp_date', '<=', date('Y-m-d'))
                 ->get();
             return response()->json($items);
@@ -2721,9 +2721,9 @@ class AdminController extends Controller
     public function filterAccountStatementsAJAX(Request $req)
     {
         if (Session::has('admin')) {
-            $transactionsQuery = Transaction::where('t_ac_id', '=', $req->ac_id)
+            $transactionsQuery = Transaction::where('admin','=',Session::get('adminid'))->where('t_ac_id', '=', $req->ac_id)
                 ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
-            $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $req->ac_id)
+            $userTransactionsQuery = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_account', '=', $req->ac_id)
                 ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
             if ($req->from_date) {
                 $transactionsQuery->whereDate('t_date', '>=', $req->from_date);
@@ -2740,7 +2740,6 @@ class AdminController extends Controller
             $mergedTransactions = $mergedTransactions->sortBy(function ($transaction) {
                 return $transaction['created_at'] ?? $transaction['created_at'];
             });
-            // return response()->json($mergedTransactions);
             return view('account-statement', compact('mergedTransactions', 'account'));
         } else {
             return redirect('/');
@@ -2754,7 +2753,7 @@ class AdminController extends Controller
             $to_date = $request->input('to_date');
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
-            $userTransactionsQuery = UserTransaction::where('tnx_user_id', '=', $request->p_id)
+            $userTransactionsQuery = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_user_id', '=', $request->p_id)
                 ->where('tnx_user_type', '=', $request->user_type);
             if ($from_date) {
                 $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
@@ -2773,7 +2772,6 @@ class AdminController extends Controller
                 $user = PartyModel::find($request->p_id);
                 Session::put('userType', 'party');
             }
-            // return response()->json($user);
             return view('party-statement', compact('userTransactions', 'user', 'from_date', 'to_date'));
         } else {
             return redirect('/');
@@ -2786,14 +2784,11 @@ class AdminController extends Controller
             $ac_id = $request->input('ac_id');
             $from_date = $request->input('from_date');
             $to_date = $request->input('to_date');
-
-            // Convert to Carbon instances
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
-
-            $transactionsQuery = Transaction::where('t_ac_id', '=', $request->ac_id)
+            $transactionsQuery = Transaction::where('admin','=',Session::get('adminid'))->where('t_ac_id', '=', $request->ac_id)
                 ->select('t_id', 't_ac_id', 't_date as tnx_date', 't_type', 't_amount', 't_final_amount', 't_remarks', 'created_at', 'updated_at');
-            $userTransactionsQuery = UserTransaction::where('tnx_account', '=', $request->ac_id)
+            $userTransactionsQuery = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_account', '=', $request->ac_id)
                 ->select('tnx_id as t_id', 'tnx_account as t_ac_id', 'tnx_date', 'tnx_user_name', 'tnx_type as t_type', 'tnx_amount as t_amount', 'tnx_closing_ac_bal as t_final_amount', 'tnx_remark as t_remarks', 'created_at', 'updated_at');
             if ($from_date) {
                 $transactionsQuery->whereDate('t_date', '>=', $from_date);
@@ -2823,7 +2818,7 @@ class AdminController extends Controller
             $to_date = $request->input('to_date');
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
-            $userTransactionsQuery = UserTransaction::where('tnx_user_id', '=', $request->p_id)
+            $userTransactionsQuery = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_user_id', '=', $request->p_id)
                 ->where('tnx_user_type', '=', $request->user_type);
             if ($from_date) {
                 $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
@@ -2848,7 +2843,7 @@ class AdminController extends Controller
             $to_date = $request->input('to_date');
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
-            $userTransactionsQuery = UserTransaction::where('tnx_user_id', '=', $request->p_id)
+            $userTransactionsQuery = UserTransaction::where('admin','=',Session::get('adminid'))->where('tnx_user_id', '=', $request->p_id)
                 ->where('tnx_user_type', '=', $request->user_type);
             if ($from_date) {
                 $userTransactionsQuery->whereDate('tnx_date', '>=', $from_date);
@@ -2865,7 +2860,6 @@ class AdminController extends Controller
             } else {
                 $user = PartyModel::find($request->p_id);
             }
-
             return response()->json(['transactions' => $userTransactions, 'from_date' => $from_date, 'to_date' => $to_date, 'user' => $user, 'status' => true]);
         } else {
             return response()->json(['message' => 'Please login again'], 400);
@@ -2878,10 +2872,10 @@ class AdminController extends Controller
             $for = 0;
             if ($type == 'purchase') {
                 $for = 1;
-                $history = PurchaseHistory::where('p_h_bill_date', '!=', NULL);
+                $history = PurchaseHistory::where('admin','=',Session::get('adminid'))->where('p_h_bill_date', '!=', NULL);
             } elseif ($type == 'sales') {
                 $for = 2;
-                $history = SalesHistory::where('s_h_bill_date', '!=', NULL);
+                $history = SalesHistory::where('admin','=',Session::get('adminid'))->where('s_h_bill_date', '!=', NULL);
             } else {
                 if ($request->type == 1) {
                     return redirect()->back();
@@ -2917,7 +2911,7 @@ class AdminController extends Controller
                 $temp = [];
                 if ($type == 'purchase') {
                     $party = PartyModel::find($histo->p_h_party_id);
-                    $histoItems = PurchaseItem::where('p_i_p_h_id', '=', $histo->p_h_id)->get();
+                    $histoItems = PurchaseItem::where('admin','=',Session::get('adminid'))->where('p_i_p_h_id', '=', $histo->p_h_id)->get();
                     foreach ($histoItems as $item) {
                         $product = ItemsModel::find($item->p_i_item_id);
                         if ($product) {
@@ -2937,7 +2931,7 @@ class AdminController extends Controller
                     array_push($data, array_merge($temp, $histo->toArray()));
                 } elseif ($type == 'sales') {
                     $customer = CustomerModel::find($histo->s_h_customer_id);
-                    $histoItems = SalesItems::where('s_i_s_h_id', '=', $histo->s_h_id)->get();
+                    $histoItems = SalesItems::where('admin','=',Session::get('adminid'))->where('s_i_s_h_id', '=', $histo->s_h_id)->get();
                     foreach ($histoItems as $item) {
                         $product = ItemsModel::find($item->s_i_item_id);
                         if ($product) {
@@ -2987,7 +2981,7 @@ class AdminController extends Controller
     public function loadExpenseListAJAX()
     {
         if (Session::has('admin')) {
-            return response()->json(Expense::all());
+            return response()->json(Expense::where('admin','=',Session::get('adminid'))->get());
         } else {
             return response()->json(['message', 'Login is required!'], 400);
         }
@@ -3002,7 +2996,7 @@ class AdminController extends Controller
                 'name.required' => 'Expense name is required!',
                 'name.string' => 'Invalid expense name!'
             ]);
-            $check = Expense::where('expense_name', '=', $request->name)->first();
+            $check = Expense::where('admin','=',Session::get('adminid'))->where('expense_name', '=', $request->name)->first();
             if ($check) {
                 return response()->json(['message', 'Expense already exists!'], 400);
             } else {
@@ -3010,9 +3004,10 @@ class AdminController extends Controller
                     'expense_name' => $request->name,
                     'depressible_type' => $request->depressible_type,
                     'depressible_percent' => $request->depressible_rate,
+                    'admin' => Session::get('adminid')
                 ]);
                 if ($result) {
-                    return response()->json(Expense::all());
+                    return response()->json(Expense::where('admin','=',Session::get('adminid'))->get());
                 } else {
                     return response()->json(['message' => 'Something went wrong!'], 400);
                 }
@@ -3024,16 +3019,16 @@ class AdminController extends Controller
     {
         if (Session::has('admin')) {
             $expense = Expense::find($id);
-            if($expense){
-                $records = ExpenseRecord::where('e_r_for', '=', $id)->orderBy('e_r_date', 'ASC')->get();
+            if ($expense) {
+                $records = ExpenseRecord::where('admin','=',Session::get('adminid'))->where('e_r_for', '=', $id)->orderBy('e_r_date', 'ASC')->get();
                 foreach ($records as $r) {
                     $ac = Account::find($r->e_r_ac_from);
                     $r->account = $ac ? $ac->ac_name : null;
                 }
-                $accounts = Account::get();
+                $accounts = Account::where('admin','=',Session::get('adminid'))->get();
                 return view('manage-expense-records', compact('expense', 'accounts', 'records', 'id'));
-            }else{
-                return redirect()->back()->with('error','Requested expense type is not available on the server!');
+            } else {
+                return redirect()->back()->with('error', 'Requested expense type is not available on the server!');
             }
         } else {
             return redirect('/');
@@ -3076,9 +3071,6 @@ class AdminController extends Controller
             }
             $account = Account::find($request->e_account);
             $amt = (float)$request->e_amount;
-            // if($expense->depressible_type == 1){
-            //     $amt = (float)$request->e_amount - ((float)$request->e_amount * (float)$expense->depressible_percent / 100);
-            // }
             if ($account) {
                 $account->ac_balance = (float)$account->ac_balance - $amt;
                 $account->save();
@@ -3092,6 +3084,7 @@ class AdminController extends Controller
                 't_final_amount' => $account->ac_balance,
                 't_remarks' => $expense->expense_name . ', ' . $request->e_remarks,
                 't_date' => $request->e_Date,
+                'admin' => Session::get('adminid')
             ]);
             $result = ExpenseRecord::create([
                 'e_r_remark' => $request->e_remarks,
@@ -3100,7 +3093,8 @@ class AdminController extends Controller
                 'e_r_for' => $request->e_for,
                 'e_r_status' => 1,
                 'e_r_tnx_id' => $tnx->t_id,
-                'e_r_date' => $request->e_Date
+                'e_r_date' => $request->e_Date,
+                'admin' => Session::get('adminid')
             ]);
             if ($result) {
                 return response()->json(true);
@@ -3201,7 +3195,7 @@ class AdminController extends Controller
     public function fetchAllExpensesAJAX(Request $request)
     {
         if (Session::has('admin')) {
-            $records = ExpenseRecord::where('e_r_for', '=', $request->id)->orderBy('e_r_date', 'ASC')->get();
+            $records = ExpenseRecord::where('admin','=',Session::get('adminid'))->where('e_r_for', '=', $request->id)->orderBy('e_r_date', 'ASC')->get();
             foreach ($records as $r) {
                 $ac = Account::find($r->e_r_ac_from);
                 $r->account = $ac ? $ac->ac_name : null;
@@ -3212,66 +3206,67 @@ class AdminController extends Controller
         }
     }
 
-    public function filterExpenseRecordAJAX(Request $request){
-        if(Session::has('admin')){
+    public function filterExpenseRecordAJAX(Request $request)
+    {
+        if (Session::has('admin')) {
             $from_date = $request->input('from_date');
             $to_date = $request->input('to_date');
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
-
-            $eRecord = ExpenseRecord::where('e_r_for','=',$request->expense_id);
-            if($from_date != null){
-                $eRecord->where('e_r_date','>=',$from_date);
+            $eRecord = ExpenseRecord::where('admin','=',Session::get('adminid'))->where('e_r_for', '=', $request->expense_id);
+            if ($from_date != null) {
+                $eRecord->where('e_r_date', '>=', $from_date);
             }
-            if($to_date != null){
-                $eRecord->where('e_r_date','<=',$to_date);
+            if ($to_date != null) {
+                $eRecord->where('e_r_date', '<=', $to_date);
             }
-            $result = $eRecord->orderBy('e_r_date','ASC')->get();
+            $result = $eRecord->orderBy('e_r_date', 'ASC')->get();
             foreach ($result as $r) {
                 $ac = Account::find($r->e_r_ac_from);
                 $r->account = $ac ? $ac->ac_name : null;
             }
-            if($result){
+            if ($result) {
                 return response()->json($result);
             }
-        }else{
-            return response()->json(['message'=>'Please login again!'],400);
+        } else {
+            return response()->json(['message' => 'Please login again!'], 400);
         }
     }
 
-    public function printExpenseStatement(Request $request){
-        // return response()->json($request);
-        if(Session::has('admin')){
+    public function printExpenseStatement(Request $request)
+    {
+        if (Session::has('admin')) {
             $from_date = $request->input('from_date');
             $to_date = $request->input('to_date');
             $from_date = $from_date ? Carbon::parse($from_date)->format('Y-m-d') : null;
             $to_date = $to_date ? Carbon::parse($to_date)->format('Y-m-d') : null;
             $expense = Expense::find($request->expense_id);
-            if($expense){
-                $eRecord = ExpenseRecord::where('e_r_for','=',$request->expense_id);
-                if($from_date != null){
-                    $eRecord->where('e_r_date','>=',$from_date);
+            if ($expense) {
+                $eRecord = ExpenseRecord::where('admin','=',Session::get('adminid'))->where('e_r_for', '=', $request->expense_id);
+                if ($from_date != null) {
+                    $eRecord->where('e_r_date', '>=', $from_date);
                 }
-                if($to_date != null){
-                    $eRecord->where('e_r_date','<=',$to_date);
+                if ($to_date != null) {
+                    $eRecord->where('e_r_date', '<=', $to_date);
                 }
-                $result = $eRecord->orderBy('e_r_date','ASC')->get();
+                $result = $eRecord->orderBy('e_r_date', 'ASC')->get();
                 foreach ($result as $r) {
                     $ac = Account::find($r->e_r_ac_from);
                     $r->account = $ac ? $ac->ac_name : null;
                 }
-                if($result){
-                    return view('expense-statement',compact('result','expense'));
+                if ($result) {
+                    return view('expense-statement', compact('result', 'expense'));
                 }
-            }else{
-                return redirect()->back()->with(['error'=>'Requested expense is no longer on the server!']);
+            } else {
+                return redirect()->back()->with(['error' => 'Requested expense is no longer on the server!']);
             }
-        }else{
+        } else {
             return redirect('/');
         }
     }
 
-    public function saveDepressedSaleRecordAJAX(Request $request){
+    public function saveDepressedSaleRecordAJAX(Request $request)
+    {
         return response()->json($request);
     }
 }

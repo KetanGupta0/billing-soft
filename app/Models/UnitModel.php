@@ -11,5 +11,5 @@ class UnitModel extends Model
 
     protected $table = 'units';
     protected $primaryKey = 'u_id';
-    protected $fillable = ['u_name', 'u_status'];
+    protected $fillable = ['u_name', 'u_status', 'admin'];
 }
