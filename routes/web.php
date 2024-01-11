@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [AdminController::class,'index']);
 Route::get('/login', [AdminController::class,'login']);
+Route::get('/register', [AdminController::class,'register']);
 Route::post('/checklogin', [AdminController::class,'checklogin']);
+Route::post('/register-submit', [AdminController::class,'registerSubmit']);
 Route::get('/dashboard', [AdminController::class,'dashboard']);
 Route::get('/purchase-entry', [AdminController::class,'purchase_entry']);
 Route::get('/sales-entry', [AdminController::class,'sales_entry']);

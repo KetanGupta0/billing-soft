@@ -3269,4 +3269,61 @@ class AdminController extends Controller
     {
         return response()->json($request);
     }
+
+    public function register()
+    {
+        if(Session::has('admin')){
+            return redirect('/dashboard');
+        }else{
+            return view('register');
+        }
+    }
+
+    public function registerSubmit(Request $request)
+    {
+        $request->validate([
+            'a_name' => 'required|string',
+            'a_user' => 'required|string|unique:admin,a_user',
+            'a_gst' => 'required|string',
+            'a_email' => 'required|email',
+            'a_fmob' => 'required|digits:10',
+            'a_smob' => 'digits:10',
+            'a_pass' => 'required|string',
+            'c_a_pass' => 'required|string|same:a_pass',
+        ],[
+            'a_name.required' => 'Business name is required!',
+            'a_name.string' => 'Invalid business name!',
+            'a_user.required' => 'Username is required!',
+            'a_user.string' => 'Invalid username!',
+            'a_user.unique' => 'Username already exist!',
+            'a_gst.required' => 'GST number is required!',
+            'a_gst.string' => 'Invalid GST number!',
+            'a_email.required' => 'Email is required!',
+            'a_email.email' => 'Invalid email!',
+            'a_fmob.required' => 'Mobile number is required!',
+            'a_fmob.digits' => 'Invalid mobile number!',
+            'a_smob.digits' => 'Invalid alternate mobile number!',
+            'a_pass.required' => 'Password is required!',
+            'a_pass.string' => 'Invalid password!',
+            'c_a_pass.required' => 'Confirm password is required!',
+            'c_a_pass.string' => 'Invalid confirm password!',
+            'c_a_pass.same' => 'Password and confirm password is not same!',
+        ]);
+
+        $result = AdminModel::create([
+            'a_name' => $request->a_name,
+            'a_user' => $request->a_user,
+            'a_gst' => $request->a_gst,
+            'a_email' => $request->a_email,
+            'a_fmob' => $request->a_fmob,
+            'a_smob' => $request->a_smob,
+            'a_pass' => $request->a_pass,
+        ]);
+
+        if($result){
+            session()->put('admin', $result->a_name);
+            session()->put('adminid', $result->a_id);
+            return response()->json(true);
+        }
+    }
 }
